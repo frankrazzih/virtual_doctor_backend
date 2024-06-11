@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 '''entry point to the program
 creates app and runs it'''
 from routes import register_routes

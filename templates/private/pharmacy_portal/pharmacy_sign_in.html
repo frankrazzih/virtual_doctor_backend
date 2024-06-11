@@ -79,22 +79,54 @@
           </a>
         </div>
 
-        <!--select portal to sign in to-->
-        <div class="container_info">
+    <!--sign form for user-->
+    <section class="section">
+        <form action="{{url_for('public.sign_in')}}" method="post">
 
-        
-        <h4 style="margin-bottom: 0.2rem;" >Select portal to sign in to</h4> <br>
-                <!--sign in to user portal-->
-                <a href="{{url_for('user.sign_in')}}">
-                  <button>Patient portal</button> 
-                </a>
-                <a href="{{url_for('hospital.sign_in')}}">
-                  <button>Hospital portal</button> 
-                </a>
-                <a href="{{url_for('pharmacy.sign_in')}}">
-                  <button>Pharmacy portal</button> 
-                </a>
-        </div>
+            <div class="container">
+                <img src="{{url_for('static', filename='images/padlock.jpeg')}}" alt="sign in" id="icon"> 
+            </div>
+      
+            <div class="container">
+                <h4 style="margin-bottom: 0.2rem;" >Sign in to Pharmacy portal</h4> <br>
+                
+            </div>
+            <br>
+            <!--flash messages-->
+           <div class="container">
+                {% with flash_msg = get_flashed_messages() %}
+                    {% if flash_msg %}
+                    
+                        {% for message in flash_msg %}
+                            <h5> {{ message }} </h5>
+                        {% endfor %}
+                    
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email:</label><br>
+                <input class="email" type="email" id="email" name="email" placeholder="bethnkirote@gmail.com" required><br>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password:</label><br>
+                <input type="password" name="password" placeholder="bethnkirote123" required><br>
+            </div>
+            
+            <div class="form_link">
+                <a class="search" href="{{url_for('public.pwd_reset')}}">Forgot password?</a>
+            </div>
+            <div class="form_link">
+                <a class="search" href="{{url_for('public.register')}}"><span style="color: black;">Or create an account </span>Here</a>
+            </div>
+
+            <div class="submit">
+                <input type="submit" value="Sign in">
+            </div>
+        </form> 
+    </section> 
     
     <footer>
         <section>
