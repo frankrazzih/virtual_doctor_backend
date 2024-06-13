@@ -3,7 +3,6 @@ from .public_routes import public_bp
 from .user_routes import user_bp
 from .hosp_routes import hospital_bp
 from .pharm_routes import pharmacy_bp
-from flask import Blueprint
 
 def register_routes(app):
     #registers the routes from the blueprints

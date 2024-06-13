@@ -1,20 +1,23 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Date, Enum, ForeignKey, Boolean, Time
-from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.orm import relationship
+from flask_sqlalchemy import SQLAlchemy
 
-Base = declarative_base()
+db = SQLAlchemy()
 
 # Users
-class Users(Base):
+class Users(db.Model):
     __tablename__ = 'users'
 
-    user_id = Column(Integer, unique=True, primary_key=True)
-    name = Column(String)
-    email = Column(String, unique=True)
-    contact = Column(Integer, unique=True)
-    birthday = Column(Date)
-    gender = Column(Enum('male', 'female', 'trans', 'undisclosed', 'other'))
-    password = Column(String)
-    reg_date = Column(Date)
+    user_id = db.Column(db.Integer, unique=True, primary_key=True)
+    user_uuid = db.Column(db.String(36), unique=True)  # Updated to String
+    first_name = db.Column(db.String(255))
+    last_name = db.Column(db.String(255))
+    email = db.Column(db.String(255), unique=True)
+    contact = db.Column(db.Integer, unique=True)
+    birthday = db.Column(db.Date)
+    gender = db.Column(db.Enum('male', 'female', 'trans', 'undisclosed', 'other'))
+    password = db.Column(db.String(255))
+    reg_date = db.Column(db.Date)
     
     # relationships
     prescriptions = relationship('Prescriptions', back_populates='user')
@@ -22,14 +25,16 @@ class Users(Base):
     payments = relationship('Payments', back_populates='user')
 
 # Hospitals
-class Hospitals(Base):
+class Hospitals(db.Model):
     __tablename__ = 'hospitals'
 
-    hosp_id = Column(Integer, unique=True, primary_key=True)
-    hosp_name = Column(String)
-    hosp_location = Column(String)
-    contact = Column(Integer, unique=True)
-    email = Column(String, unique=True)
+    hosp_id = db.Column(db.Integer, unique=True, primary_key=True)
+    hosp_uuid = db.Column(db.String(36), unique=True)  # Updated to String
+    hosp_name = db.Column(db.String(255))
+    hosp_location = db.Column(db.String(255))
+    contact = db.Column(db.Integer, unique=True)
+    email = db.Column(db.String(255), unique=True)
+    password = db.Column(db.String(255))
     
     # relationships
     staff = relationship('Staff', back_populates='hospital')
@@ -39,33 +44,36 @@ class Hospitals(Base):
     revenues = relationship('Revenue', back_populates='hospital')
 
 # Staff
-class Staff(Base):
+class Staff(db.Model):
     __tablename__ = 'staff'
 
-    staff_id = Column(Integer, unique=True, primary_key=True)
-    staff_name = Column(String)
-    service = Column(String)
-    availability = Column(Boolean)
+    staff_id = db.Column(db.Integer, unique=True, primary_key=True)
+    staff_uuid = db.Column(db.String(36), unique=True)  # Updated to String
+    staff_name = db.Column(db.String(255))
+    service = db.Column(db.String(255))
+    availability = db.Column(db.Boolean)
     
     # fk to hospitals
-    hosp_id = Column(Integer, ForeignKey('hospitals.hosp_id'))
+    hosp_id = db.Column(db.Integer, db.ForeignKey('hospitals.hosp_id'))
     
     # relationships
     bookings = relationship('Bookings', back_populates='staff')
     hospital = relationship('Hospitals', back_populates='staff')
 
 # Pharmacy
-class Pharmacy(Base):
+class Pharmacy(db.Model):
     __tablename__ = 'pharmacy'
 
-    pharm_id = Column(Integer, primary_key=True, unique=True)
-    name = Column(String)
-    location = Column(String)
-    contact = Column(Integer, unique=True)
-    email = Column(String,  unique=True)
+    pharm_id = db.Column(db.Integer, primary_key=True, unique=True)
+    pharm_uuid = db.Column(db.String(36), unique=True)  # Updated to String
+    name = db.Column(db.String(255))
+    location = db.Column(db.String(255))
+    contact = db.Column(db.Integer, unique=True)
+    email = db.Column(db.String(255), unique=True)
+    password = db.Column(db.String(255))
     
     # fk to hospitals
-    hosp_id = Column(Integer, ForeignKey('hospitals.hosp_id'), nullable=True)
+    hosp_id = db.Column(db.Integer, db.ForeignKey('hospitals.hosp_id'), nullable=True)
     
     # relationships
     stock = relationship('Stock', back_populates='pharmacy')
@@ -74,66 +82,70 @@ class Pharmacy(Base):
     revenues = relationship('Revenue', back_populates='pharmacy')
 
 # Medicine
-class Medicine(Base):
+class Medicine(db.Model):
     __tablename__ = 'medicine'
 
-    meds_id = Column(Integer, primary_key=True, unique=True)
-    meds_name = Column(String)
-    manufacturer = Column(String)
+    meds_id = db.Column(db.Integer, primary_key=True, unique=True)
+    meds_uuid = db.Column(db.String(36), unique=True)  # Updated to String
+    meds_name = db.Column(db.String(255))
+    manufacturer = db.Column(db.String(255))
     
     # relationships
     stock = relationship('Stock', back_populates='medicine')
 
 # Junction table for medicine and pharmacy stock
-class Stock(Base):
+class Stock(db.Model):
     __tablename__ = 'stock'
 
-    stock_id = Column(Integer, primary_key=True, unique=True)
-    price = Column(Float)
-    quantity = Column(Float)
-    availability = Column(String, nullable=True)
+    stock_id = db.Column(db.Integer, primary_key=True, unique=True)
+    stock_uuid = db.Column(db.String(36), unique=True)  # Updated to String
+    price = db.Column(db.Float)
+    quantity = db.Column(db.Float)
+    availability = db.Column(db.String(255), nullable=True)
     
     # fk to pharmacy and meds
-    pharm_id = Column(Integer, ForeignKey('pharmacy.pharm_id'))
-    meds_id = Column(Integer, ForeignKey('medicine.meds_id'))
+    pharm_id = db.Column(db.Integer, db.ForeignKey('pharmacy.pharm_id'))
+    meds_id = db.Column(db.Integer, db.ForeignKey('medicine.meds_id'))
     
     # relationships
     pharmacy = relationship('Pharmacy', back_populates='stock')
     medicine = relationship('Medicine', back_populates='stock')
 
 # Prescriptions
-class Prescriptions(Base):
+class Prescriptions(db.Model):
     __tablename__ = 'prescriptions'
 
-    presc_id = Column(Integer, primary_key=True, unique=True)
-    date_issued = Column(DateTime)
-    diagnosis = Column(String)
-    prescription = Column(String)
-    staff_id = Column(Integer)
-    hosp_id = Column(Integer)
-    fully_filled = Column(Boolean)
+    presc_id = db.Column(db.Integer, primary_key=True, unique=True)
+    presc_uuid = db.Column(db.String(36), unique=True)  # Updated to String
+    date_issued = db.Column(db.DateTime)
+    diagnosis = db.Column(db.String(255))
+    prescription = db.Column(db.String(255))
+    staff_id = db.Column(db.Integer)
+    hosp_id = db.Column(db.Integer)
+    fully_filled = db.Column(db.Boolean)
     
     # fk to users
-    user_id = Column(Integer, ForeignKey('users.user_id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
     
     # relationships
     user = relationship('Users', back_populates='prescriptions')
 
 # Bookings
-class Bookings(Base):
+class Bookings(db.Model):
     __tablename__ = 'bookings'
 
-    booking_id = Column(Integer, primary_key=True, unique=True)
-    date = Column(DateTime)
-    started = Column(Time)
-    ended = Column(Time)
-    cost = Column(Float)
-    complete = Column(Boolean)
+    booking_id = db.Column(db.Integer, primary_key=True, unique=True)
+    booking_uuid = db.Column(db.String(36), unique=True)  # Updated to String
+    date = db.Column(db.DateTime)
+    started = db.Column(db.Time)
+    ended = db.Column(db.Time)
+    cost = db.Column(db.Float)
+    complete = db.Column(db.Boolean)
     
     # fk
-    user_id = Column(Integer, ForeignKey('users.user_id'))
-    hosp_id = Column(Integer, ForeignKey('hospitals.hosp_id'))
-    staff_id = Column(Integer, ForeignKey('staff.staff_id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    hosp_id = db.Column(db.Integer, db.ForeignKey('hospitals.hosp_id'))
+    staff_id = db.Column(db.Integer, db.ForeignKey('staff.staff_id'))
     
     # relationships
     user = relationship('Users', back_populates='bookings')
@@ -141,19 +153,20 @@ class Bookings(Base):
     staff = relationship('Staff', back_populates='bookings')
 
 # Payments
-class Payments(Base):
+class Payments(db.Model):
     __tablename__ = 'payments'
 
-    pay_id = Column(Integer, primary_key=True, unique=True)
-    bill_type = Column(String)
-    amount = Column(Float)
-    pay_method = Column(String)
-    date = Column(DateTime)
+    pay_id = db.Column(db.Integer, primary_key=True, unique=True)
+    pay_uuid = db.Column(db.String(36), unique=True)  # Updated to String
+    bill_type = db.Column(db.String(255))
+    amount = db.Column(db.Float)
+    pay_method = db.Column(db.String(255))
+    date = db.Column(db.DateTime)
     
     # fk
-    user_id = Column(Integer, ForeignKey('users.user_id'))
-    pharm_id = Column(Integer, ForeignKey('pharmacy.pharm_id'))
-    hosp_id = Column(Integer, ForeignKey('hospitals.hosp_id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    pharm_id = db.Column(db.Integer, db.ForeignKey('pharmacy.pharm_id'))
+    hosp_id = db.Column(db.Integer, db.ForeignKey('hospitals.hosp_id'))
     
     # relationships
     user = relationship('Users', back_populates='payments')
@@ -162,17 +175,18 @@ class Payments(Base):
     revenues = relationship('Revenue', back_populates='payment')
 
 # Revenue
-class Revenue(Base):
+class Revenue(db.Model):
     __tablename__ = 'revenue'
 
-    pay_id_1 = Column(Integer, ForeignKey('payments.pay_id'), primary_key=True)
-    gross_income = Column(Float)
-    net_income = Column(Float)
-    vd_profit = Column(Float)
+    pay_id_1 = db.Column(db.Integer, db.ForeignKey('payments.pay_id'), primary_key=True)
+    rev_uuid = db.Column(db.String(36), unique=True)  # Updated to String
+    gross_income = db.Column(db.Float)
+    net_income = db.Column(db.Float)
+    vd_profit = db.Column(db.Float)
     
     # fk
-    pharm_id = Column(Integer, ForeignKey('pharmacy.pharm_id'))
-    hosp_id = Column(Integer, ForeignKey('hospitals.hosp_id'))
+    pharm_id = db.Column(db.Integer, db.ForeignKey('pharmacy.pharm_id'))
+    hosp_id = db.Column(db.Integer, db.ForeignKey('hospitals.hosp_id'))
     
     # relationships
     payment = relationship('Payments', back_populates='revenues')
