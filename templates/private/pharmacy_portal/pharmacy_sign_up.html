@@ -82,7 +82,7 @@
 <!--registration form-->
 <section class="section">
 
-    <form action="{{ url_for('hospital.register') }}" method="post">
+    <form action="{{ url_for('pharmacy.register') }}" method="post">
 
         <div class="container">
             <img src="{{ url_for('static', filename='images/registration.jpeg') }}" alt="sign up" id="icon"> 
@@ -93,7 +93,7 @@
         </div>
         <br>
         <div class="form-group">
-            <label for="name">Pharmacy name:</label><br>
+          <label for="name">Pharmacy Name (If applicable, use associated hospital's name):</label><br>
             <input type="text" name="name" placeholder="Pharmacy X" required><br>
         </div>
 

@@ -35,6 +35,7 @@ class Hospitals(db.Model):
     contact = db.Column(db.Integer, unique=True)
     email = db.Column(db.String(255), unique=True)
     password = db.Column(db.String(255))
+    reg_date = db.Column(db.Date)
     
     # relationships
     staff = relationship('Staff', back_populates='hospital')
@@ -66,11 +67,12 @@ class Pharmacy(db.Model):
 
     pharm_id = db.Column(db.Integer, primary_key=True, unique=True)
     pharm_uuid = db.Column(db.String(36), unique=True)  # Updated to String
-    name = db.Column(db.String(255))
-    location = db.Column(db.String(255))
+    pharm_name = db.Column(db.String(255))
+    pharm_location = db.Column(db.String(255))
     contact = db.Column(db.Integer, unique=True)
     email = db.Column(db.String(255), unique=True)
     password = db.Column(db.String(255))
+    reg_date = db.Column(db.Date)
     
     # fk to hospitals
     hosp_id = db.Column(db.Integer, db.ForeignKey('hospitals.hosp_id'), nullable=True)

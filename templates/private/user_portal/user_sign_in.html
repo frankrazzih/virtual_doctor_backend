@@ -81,7 +81,7 @@
 
     <!--sign form for user-->
     <section class="section">
-        <form action="{{url_for('public.sign_in')}}" method="post">
+        <form action="{{url_for('user.sign_in')}}" method="post">
 
             <div class="container">
                 <img src="{{url_for('static', filename='images/padlock.jpeg')}}" alt="sign in" id="icon"> 
@@ -107,7 +107,7 @@
 
             <div class="form-group">
                 <label for="email">Email:</label><br>
-                <input class="email" type="email" id="email" name="email" placeholder="bethnkirote@gmail.com" required><br>
+                <input type="email" name="email" placeholder="bethnkirote@gmail.com" required><br>
             </div>
 
             <div class="form-group">

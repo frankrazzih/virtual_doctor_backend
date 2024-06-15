@@ -1,9 +1,10 @@
-'''routes for public pages'''
+'''routes for user operations'''
 
 from flask import (
     Blueprint, 
     render_template, 
     request,
+    jsonify,
     flash)
 from flask_mail import Message
 from models import (
@@ -12,6 +13,7 @@ from models import (
     )
 from .utils import (
     hash_pwd,
+    check_pwd,
     gen_uuid,
     create_mail_object,
     get_cur_time
@@ -66,9 +68,11 @@ def register():
             return render_template('/private/user_portal/user_sign_in.html')
         #errors arising due to unique constraint violation
         except:
-            db.session.rollback
+            db.session.rollback()
             flash('Number or email already exists!')
             return render_template('/public/sign_in.html')
+        finally:
+            db.session.close()
     else:
         #render the registration page
         return render_template('/private/user_portal/user_sign_up.html')
@@ -80,7 +84,19 @@ def sign_in():
     stored in the database for the customer
     """
     if request.method == 'POST':
-        pass
+        email = request.form['email']
+        password = request.form['password']
+        hashed_pwd = db.session.query(Users.password).filter_by(email=email).first()
+        if hashed_pwd is not None:
+            correct_pwd = check_pwd(password, hashed_pwd[0])
+        else:
+            flash('Email does not exist!. Please try again.')
+            return render_template('/private/user_portal/user_sign_in.html')
+        if correct_pwd:
+            return jsonify('Signed in successfully as user!')
+        else:
+            flash('Wrong password!. Please try again.')
+            return render_template('/private/user_portal/user_sign_in.html')
     elif request.method == 'GET':
         #if method is GET
         return render_template('/private/user_portal/user_sign_in.html')

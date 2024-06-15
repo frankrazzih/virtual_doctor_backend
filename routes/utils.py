@@ -19,6 +19,12 @@ def hash_pwd(password: str)->bytes:
     hashed_pwd = bcrypt.hashpw(pwd_bytes, salt)
     return hashed_pwd
 
+def check_pwd(password: str, hashed_pwd: bytes)->bool:
+    '''checks whether a password is correct'''
+    pwd_bytes = password.encode('UTF-8')
+    hashed_pwd = hashed_pwd.encode('UTF-8')
+    return bcrypt.checkpw(pwd_bytes, hashed_pwd)
+
 def gen_uuid()->uuid:
     '''generates a uuid'''
     return str(uuid.uuid4())
