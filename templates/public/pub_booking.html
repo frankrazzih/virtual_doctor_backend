@@ -15,95 +15,121 @@
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5632460936680731"
      crossorigin="anonymous"></script>
     </head>
-    <body>
         <!-- Navigation Bar -->
         <div class="phone">
-          <a href="{{url_for('priv_home')}}">
+          <a href="{{url_for('public.home')}}">
           <img src="{{url_for('static', filename='images/logo.jpeg')}}" alt="logo" id="phone_logo">
           </a>
-          <p><i><strong>"Your health matters to us"</strong></i></p>
-        </div>
-        <!-- Navigation Bar -->
-        <div class="navbar">
-            <a href="{{url_for('priv_home')}}">Home</a>
-            <a href="{{url_for('book_now')}}">Bookings</a>
-            <a href="{{url_for('history')}}">Records</a>
+          <p><i><strong>"Your health matters"</strong></i></p>
+        
+          <div class="navbar">
+            <a href="{{url_for('public.sign_in')}}">
+              <button>Sign in</button>
+              </a>
+              
             <a>
                 <img src="{{url_for('static', filename='images/menu.jpeg')}}" alt="Menu tab" onclick="coll_cont(event)" id="menu_img">
             </a>
+          </div>
         </div> 
+        <!--side menu-->
         <div class="cont">
           <br>
-          <img src="{{url_for('static', filename='images/logo.jpeg')}}" alt="logo" id="phone_logo">
-            <a href="{{url_for('virtual')}}">Virtual doctor</a>
-            <a href="{{url_for('pay')}}">Payments</a>
-            <a href="{{url_for('pharmacy')}}">Pharmacy</a>
-            <a href="{{url_for('sign_out')}}">Sign out</a>
+            <img src="{{url_for('static', filename='images/logo.jpeg')}}" alt="logo" id="phone_logo">
+            <a href="{{url_for('public.home')}}">Home</a>
+            <a href="{{url_for('public.services')}}">Services</a>
+            <a href="{{url_for('public.forums')}}">Forums</a>
+            <a href="{{url_for('public.gallery')}}">Gallery</a>
+            <a href="{{url_for('public.about')}}">About</a>
+            <a href="{{url_for('public.contact')}}">Contact</a>
+            <a href="{{url_for('public.help')}}">Help</a>
         </div>
-         <!--navbar for large devices-->
-         <div class="large">
-          <a href="{{url_for('priv_home')}}">Home</a>
-          <a href="{{url_for('book_now')}}">Bookings</a>
-          <a href="{{url_for('history')}}">Records</a>
-          <a href="{{url_for('virtual')}}">Virtual doctor</a>
-          <a href="{{url_for('pay')}}">Payments</a>
-          <a href="{{url_for('pharmacy')}}">Pharmacy</a>
-          <a href="{{url_for('sign_out')}}">Sign out</a>
-        </div>
-
-       
-        <!--flash message-->
-    <div class="container">
-        <br>
-      
-        {% with flash_msg = get_flashed_messages() %}
-           {% if flash_msg %}
-                {% for message in flash_msg %}
-                    <h4> {{ message }} </h4>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-       
-    </div>
-    
-     <!-- intro -->
-     <div class="container_info">
-        <section>
-        {% with name = name %}
-            {% if name %}
-                <h3> Hello {{ name }}, Welcome to your client portal.</h3>
-            {% endif %}
-        {% endwith %}
-        </section>
-    </div>
-    
-    <div class="container_info">
-        <section>
-            <p style="text-align: left;">
-                In this digital age, we have not been left behind in 
-                making sure that even healthcare services can be rendered
-                from anywhere without the need for physical presence at the
-                hospital. You can meet a doctor virtually and then discuss as
-                to whether you should visit the hospital or get treatment from
-                your home.
-                Manage all your hospital related operations here.
-                That includes:
-            </p>
+        
+            <!--navbar for large devices-->
+            <div class="large">
+              <div class="logo">
+                <a href="{{url_for('public.home')}}" class="large_logo">
+                <img src="{{url_for('static', filename='images/logo.jpeg')}}" alt="logo" id="phone_logo">
+                </a>
+                <p><i><strong>"Your health matters"</strong></i></p>
+              </div>
+              <a href="{{url_for('public.home')}}">Home</a>
+              <a href="{{url_for('public.services')}}">Services</a>
+              <a href="{{url_for('public.about')}}">About</a>
+              <a href="{{url_for('public.contact')}}">Contact</a>
+              <div class="drop_down">
+                <p>
+                  Community
+                  <img src="{{url_for('static', filename='images/drop.jpeg')}}" alt="logo" id="drop">
+                </p>
+                
                 <ul>
-                    <li>Book Appointments</li>
-                    <li>Reschedule your Appointments</li>
-                    <li>View you medical records such as lab reports</li>
-                    <li>Get personalized medical support from our doctors</li>
-                    <li>Meet a doctor virtually at the comfort of your home</li>
-                    <li>Refill your prescriptions and get them delivered to you</li>
-                    <li>Pay for all your services online</li>
+                  <li>
+                    <a href="{{url_for('public.forums')}}">Forums</a>
+                  </li>
+                  <li>
+                    <a href="{{url_for('public.gallery')}}">Gallery</a>
+                  </li>
                 </ul>
-            
-        </section>
-    </div>
-    <br>
+              </div>
+              <a href="{{url_for('public.help')}}">Help</a>
+              <a href="{{url_for('public.sign_in')}}" id="login">
+                <button>Sign in</button>
+              </a>
+            </div>
+<body>
+   <!--flash message-->
+   <div class="container">
+    {% with flash_msg = get_flashed_messages() %}
+       {% if flash_msg %}
+        
+            {% for message in flash_msg %}
+                <h5> {{ message }} </h5>
+            {% endfor %}
+        
+        {% endif %}
+    {% endwith %}
+</div>
+<!--public booking form-->
+<section class="section">
+    <form action="{{url_for('public.booking')}}" method="post">
 
-    <footer>
+        <div class="container">
+            <img src="{{url_for('static', filename='images/booking.jpeg')}}" alt="sign in" id="icon"> 
+        </div>
+        <div class="container">
+            <h4 style="margin-bottom: 0.2rem;" >Enter the service you need and serach for the available hospitals</h4>
+        
+            <input type="search" name="search" placeholder="Search...">
+        <div class="form-group">
+         <label for="service">Service:</label><br>
+         <select name="service" id="service" required>
+            <option value="" disabled selected>--select service--</option>
+            <option value="emergency">Emergency Care</option>
+            <option value="cardiology">Cardiology</option>
+            <option value="neurology">Neurology</option>
+            <option value="orthopedics">Orthopedics</option>
+            <option value="gastroenterology">Gastroenterology</option>
+            <option value="radiology">Radiology</option>
+            <option value="pathology">Pathology</option>
+            <option value="pediatrics">Pediatrics</option>
+            <option value="psychiatry">Psychiatry</option>
+            <option value="dermatology">Dermatology</option>
+            <option value="obstetrics">Obstetrics</option>
+            <option value="gynecology">Gynecology</option>
+            
+          </select>
+         </div>
+          
+        
+        <div class="submit">
+            <input type="submit" value="Search">
+        </div>
+    </form>
+</section>
+  
+        
+      <footer>
         <section>
             <div>
                 Need help?<br>

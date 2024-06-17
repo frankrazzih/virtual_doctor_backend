@@ -93,10 +93,15 @@ def sign_in():
             flash('Email does not exist!. Please try again.')
             return render_template('/private/user_portal/user_sign_in.html')
         if correct_pwd:
-            return jsonify('Signed in successfully as user!')
+            return render_template('/private/user_portal/user_home.html')
         else:
             flash('Wrong password!. Please try again.')
             return render_template('/private/user_portal/user_sign_in.html')
     elif request.method == 'GET':
         #if method is GET
         return render_template('/private/user_portal/user_sign_in.html')
+    
+@user_bp.route('/home', methods=['GET'])
+def home():
+    '''user homepage'''
+    return render_template('/private/user_portal/user_home.html')

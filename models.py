@@ -137,7 +137,8 @@ class Bookings(db.Model):
     __tablename__ = 'bookings'
 
     booking_id = db.Column(db.Integer, primary_key=True, unique=True)
-    booking_uuid = db.Column(db.String(36), unique=True)  # Updated to String
+    booking_uuid = db.Column(db.String(36), unique=True)
+    service = db.Column(db.String(255))
     date = db.Column(db.DateTime)
     started = db.Column(db.Time)
     ended = db.Column(db.Time)
