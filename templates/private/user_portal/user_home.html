@@ -33,12 +33,15 @@
 <div class="cont">
   <br>
   <img src="{{url_for('static', filename='images/logo.jpeg')}}" alt="logo" id="phone_logo">
+  <a href="{{url_for('user.home')}}">Home</a>
   <a href="{{url_for('public.booking')}}">Booking</a>
+  <a href="{{url_for('user.logout')}}">Logout</a>
 </div>
  <!--navbar for large devices-->
  <div class="large">
   <a href="{{url_for('user.home')}}">Home</a>
   <a href="{{url_for('public.booking')}}">Booking</a>
+  <a href="{{url_for('user.logout')}}">Logout</a>
 </div>
 
         <!--flash message-->

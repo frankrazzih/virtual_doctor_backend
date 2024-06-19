@@ -5,11 +5,16 @@ from flask import (
     render_template, 
     request,
     jsonify,
+    session,
+    redirect,
+    url_for,
     flash)
 from flask_mail import Message
 from models import (
     db,
     Users,
+    Hospitals,
+    Staff
     )
 from .utils import (
     hash_pwd,
@@ -18,7 +23,7 @@ from .utils import (
     create_mail_object,
     get_cur_time
     )
-
+from sqlalchemy.orm import join
 #create a blueprint
 user_bp = Blueprint('user', __name__)
 
@@ -93,6 +98,9 @@ def sign_in():
             flash('Email does not exist!. Please try again.')
             return render_template('/private/user_portal/user_sign_in.html')
         if correct_pwd:
+            #store user id in the session
+            user = db.session.query(Users).filter_by(email=email).first()
+            session['user_uuid'] = user.user_uuid
             return render_template('/private/user_portal/user_home.html')
         else:
             flash('Wrong password!. Please try again.')
@@ -100,8 +108,40 @@ def sign_in():
     elif request.method == 'GET':
         #if method is GET
         return render_template('/private/user_portal/user_sign_in.html')
-    
+
+@user_bp.route('/logout', methods=['GET'])
+def logout():
+    '''logout a user'''
+    del session['user_uuid'] #remove a user's uuid from the session
+    return redirect(url_for('public.home'))
+
 @user_bp.route('/home', methods=['GET'])
 def home():
     '''user homepage'''
-    return render_template('/private/user_portal/user_home.html')
+    if 'user_uuid' in session:
+        return render_template('/private/user_portal/user_home.html')
+    else:
+        return redirect(url_for('public.home'))
+
+@user_bp.route('/booking', methods=['POST'])
+def booking():
+    '''booking endpoint'''
+    service = request.form['service']
+    hosp = request.form['hospital']
+    #if hosp is none, user is searching all hospitals else searching a specific hospital
+    if not hosp:
+        res: list[tuple] = db.session.query(Staff, Hospitals)\
+                        .join(Hospitals, Staff.hosp_id == Hospitals.hosp_id)\
+                        .filter(Staff.service == service)\
+                        .filter(Staff.availability == True).all()
+        data: list[tuple] = [(hosp.hosp_name, staff.staff_name, staff.availability) for staff, hosp in res]
+        return render_template('/public/booking.html', data)
+    else:
+        res: tuple = db.session.query(Staff, Hospitals)\
+                        .join(Hospitals, Staff.hosp_id == Hospitals.hosp_id)\
+                        .filter(Staff.service == service)\
+                        .filter(Staff.availability == True)\
+                        .filter(Hospitals.hosp_name == hosp).first()
+        data: tuple = (res[1].hosp_name, res[0].staff_name, res[0].availability)
+        return render_template('/public/booking.html', data)     
+

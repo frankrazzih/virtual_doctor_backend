@@ -30,11 +30,10 @@ def sign_in():
         return render_template('/public/sign_in.html')
 
 #booking
-@public_bp.route('/booking', methods=['POST', 'GET'])
+@public_bp.route('/booking', methods=['GET'])
 def booking():
     '''starts the booking process'''
-    if request.method == 'GET':
-        return render_template('/public/pub_booking.html')
+    return render_template('/public/booking.html')
 
 #renders services page
 @public_bp.route('/services', methods=['GET'])

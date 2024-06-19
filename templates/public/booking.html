@@ -92,42 +92,67 @@
 </div>
 <!--public booking form-->
 <section class="section">
-    <form action="{{url_for('public.booking')}}" method="post">
+  <form action="{{ url_for('user.booking') }}" method="post">
+      <div class="container">
+          <img src="{{ url_for('static', filename='images/booking.jpeg') }}" alt="sign in" id="icon">
+      </div>
 
-        <div class="container">
-            <img src="{{url_for('static', filename='images/booking.jpeg')}}" alt="sign in" id="icon"> 
-        </div>
-        <div class="container">
-            <h4 style="margin-bottom: 0.2rem;" >Enter the service you need and serach for the available hospitals</h4>
-        
-            <input type="search" name="search" placeholder="Search...">
-        <div class="form-group">
-         <label for="service">Service:</label><br>
-         <select name="service" id="service" required>
-            <option value="" disabled selected>--select service--</option>
-            <option value="emergency">Emergency Care</option>
-            <option value="cardiology">Cardiology</option>
-            <option value="neurology">Neurology</option>
-            <option value="orthopedics">Orthopedics</option>
-            <option value="gastroenterology">Gastroenterology</option>
-            <option value="radiology">Radiology</option>
-            <option value="pathology">Pathology</option>
-            <option value="pediatrics">Pediatrics</option>
-            <option value="psychiatry">Psychiatry</option>
-            <option value="dermatology">Dermatology</option>
-            <option value="obstetrics">Obstetrics</option>
-            <option value="gynecology">Gynecology</option>
-            
-          </select>
-         </div>
-          
-        
-        <div class="submit">
-            <input type="submit" value="Search">
-        </div>
-    </form>
+      <div class="container">
+          <h4 style="margin-bottom: 0.2rem;">Select the service you need</h4>
+          <div class="form-group">
+              <label for="service">Service:</label><br>
+              <select name="service" id="service" required>
+                  <option value="" disabled selected>--select service--</option>
+                  <option value="emergency">Emergency Care</option>
+                  <option value="cardiology">Cardiology</option>
+                  <option value="neurology">Neurology</option>
+                  <option value="orthopedics">Orthopedics</option>
+                  <option value="gastroenterology">Gastroenterology</option>
+                  <option value="radiology">Radiology</option>
+                  <option value="pathology">Pathology</option>
+                  <option value="pediatrics">Pediatrics</option>
+                  <option value="psychiatry">Psychiatry</option>
+                  <option value="dermatology">Dermatology</option>
+                  <option value="obstetrics">Obstetrics</option>
+                  <option value="gynecology">Gynecology</option>
+              </select>
+          </div>
+
+          <h4 style="margin-bottom: 0.2rem;">Choose how you want to search for a hospital</h4>
+          <div class="form-group" style="display: flex;" >
+              <input type="radio" name="search_type" id="search_all" value="all" checked onclick="toggleSearchField()">
+              <label for="search_all">View all hospitals offering this service</label>
+          </div>
+          <div class="form-group" style="display: flex;">
+              <input type="radio" name="search_type" id="search_specific" value="specific" onclick="toggleSearchField()">
+              <label for="search_specific">Search for a specific hospital</label>
+          </div>
+
+          <div class="form-group" id="hospital-search-group" style="display: none;">
+              <label for="hospital">Hospital Name:</label>
+              <input type="search" name="hospital" id="hospital" placeholder="Search for a specific hospital..." >
+          </div>
+
+          <div class="submit">
+              <input type="submit" value="Search">
+          </div>
+      </div>
+  </form>
 </section>
-  
+
+<script>
+  function toggleSearchField() {
+      var searchSpecific = document.getElementById('search_specific');
+      var hospitalSearchGroup = document.getElementById('hospital-search-group');
+      
+      if (searchSpecific.checked) {
+          hospitalSearchGroup.style.display = "block";
+      } else {
+          hospitalSearchGroup.style.display = "none";
+      }
+  }
+</script>
+
         
       <footer>
         <section>
