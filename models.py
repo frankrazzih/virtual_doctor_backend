@@ -13,7 +13,7 @@ class Users(db.Model):
     first_name = db.Column(db.String(255))
     last_name = db.Column(db.String(255))
     email = db.Column(db.String(255), unique=True)
-    contact = db.Column(db.Integer, unique=True)
+    contact = db.Column(db.String(30), unique=True)
     birthday = db.Column(db.Date)
     gender = db.Column(db.Enum('male', 'female', 'trans', 'undisclosed', 'other'))
     password = db.Column(db.String(255))
@@ -32,7 +32,7 @@ class Hospitals(db.Model):
     hosp_uuid = db.Column(db.String(36), unique=True)  # Updated to String
     hosp_name = db.Column(db.String(255))
     hosp_location = db.Column(db.String(255))
-    contact = db.Column(db.Integer, unique=True)
+    contact = db.Column(db.String(30), unique=True)
     email = db.Column(db.String(255), unique=True)
     password = db.Column(db.String(255))
     reg_date = db.Column(db.Date)
@@ -43,6 +43,19 @@ class Hospitals(db.Model):
     bookings = relationship('Bookings', back_populates='hospital')
     payments = relationship('Payments', back_populates='hospital')
     revenues = relationship('Revenue', back_populates='hospital')
+
+class Services(db.Model):
+    __tablename__ = 'service_costs'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    uuid = Column(pgUUID(as_uuid=True), unique=True, default=uuid.uuid4)
+    service = Column(String, nullable=False)
+    cost = Column(Float, nullable=False)
+    hosp_id = Column(Integer, ForeignKey('hospitals.hosp_id'), nullable=False)
+
+    # relationships
+    hospital = relationship('Hospitals', back_populates='service_costs')
+    UniqueConstraint('service', 'hosp_id', name='uix_service_hosp')
 
 # Staff
 class Staff(db.Model):
@@ -69,7 +82,7 @@ class Pharmacy(db.Model):
     pharm_uuid = db.Column(db.String(36), unique=True)  # Updated to String
     pharm_name = db.Column(db.String(255))
     pharm_location = db.Column(db.String(255))
-    contact = db.Column(db.Integer, unique=True)
+    contact = db.Column(db.String(30), unique=True)
     email = db.Column(db.String(255), unique=True)
     password = db.Column(db.String(255))
     reg_date = db.Column(db.Date)

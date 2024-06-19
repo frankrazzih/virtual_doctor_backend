@@ -29,11 +29,6 @@ def sign_in():
         #if method is GET
         return render_template('/public/sign_in.html')
 
-#booking
-@public_bp.route('/booking', methods=['GET'])
-def booking():
-    '''starts the booking process'''
-    return render_template('/public/booking.html')
 
 #renders services page
 @public_bp.route('/services', methods=['GET'])

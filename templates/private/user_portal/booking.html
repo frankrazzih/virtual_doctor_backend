@@ -37,6 +37,7 @@
           <br>
             <img src="{{url_for('static', filename='images/logo.jpeg')}}" alt="logo" id="phone_logo">
             <a href="{{url_for('public.home')}}">Home</a>
+            <a href="{{url_for('user.booking')}}">Booking</a>
             <a href="{{url_for('public.services')}}">Services</a>
             <a href="{{url_for('public.forums')}}">Forums</a>
             <a href="{{url_for('public.gallery')}}">Gallery</a>
@@ -54,6 +55,7 @@
                 <p><i><strong>"Your health matters"</strong></i></p>
               </div>
               <a href="{{url_for('public.home')}}">Home</a>
+              <a href="{{url_for('user.booking')}}">Booking</a>
               <a href="{{url_for('public.services')}}">Services</a>
               <a href="{{url_for('public.about')}}">About</a>
               <a href="{{url_for('public.contact')}}">Contact</a>
@@ -139,6 +141,57 @@
       </div>
   </form>
 </section>
+
+<div class="data_section">
+    <!--search results-->
+    {%if method == 'post'%}
+    <!--check if any data was found-->
+      {% if not data%}
+        <h2>No results found! Try again.</h2>
+      {% endif %}
+      <!--check data content to know the type of data-->
+    {%if data%}
+      {% if data_content == 'one' %}
+      <div>
+        <p>Service: {{ data[3] }} </p>
+        <p>Hospital: {{ data[0] }} </p>
+        <p>Availability: {{ data[2] }} </p>
+        <p>Doctor: {{ data[1] }} </p>
+        <!--hidden form to return user selection to server-->
+        <form action="{{url_for(user.booking)}}">
+          <input type="hidden" name="service" value="{{ data[3] }}">
+          <input type="hidden" name="hospital" value="{{ data[0] }}">
+          <input type="hidden" name="availability" value="{{ data[2] }}">
+          <input type="hidden" name="staff" value="{{ data[1] }}">
+          <input type="hidden" name="action" value="booking">
+          <button type="submit">Book now</button>
+        </form>
+      </div>
+      {%endif%}
+      <!--data contains all hospitals-->
+      {%if data_content == 'all'%}
+      {% for res in data %}
+      <div>
+        <p>Service: {{ res[3] }} </p>
+        <p>Hospital: {{ res[0] }} </p>
+        <p>Availability: {{ res[2] }} </p>
+        <p>Doctor: {{ res[1] }} </p>
+        <!--hidden form to return user selection to server-->
+        <form action="{{url_for(user.booking)}}">
+          <input type="hidden" name="service" value="{{ res[3] }}">
+          <input type="hidden" name="hospital" value="{{ res[0] }}">
+          <input type="hidden" name="availability" value="{{ res[2] }}">
+          <input type="hidden" name="staff" value="{{ res[1] }}">
+          <input type="hidden" name="action" value="booking">
+          <button type="submit">Book now</button>
+        </form>
+      </div>
+      <hr>
+      {%endfor%}
+      {%endif%}
+  {%endif%}
+  {%endif%}
+</div>
 
 <script>
   function toggleSearchField() {

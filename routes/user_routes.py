@@ -14,7 +14,8 @@ from models import (
     db,
     Users,
     Hospitals,
-    Staff
+    Staff,
+    Bookings
     )
 from .utils import (
     hash_pwd,
@@ -101,6 +102,7 @@ def sign_in():
             #store user id in the session
             user = db.session.query(Users).filter_by(email=email).first()
             session['user_uuid'] = user.user_uuid
+            session['user']
             return render_template('/private/user_portal/user_home.html')
         else:
             flash('Wrong password!. Please try again.')
@@ -123,25 +125,53 @@ def home():
     else:
         return redirect(url_for('public.home'))
 
-@user_bp.route('/booking', methods=['POST'])
+@user_bp.route('/booking', methods=['POST', 'GET'])
 def booking():
     '''booking endpoint'''
-    service = request.form['service']
-    hosp = request.form['hospital']
-    #if hosp is none, user is searching all hospitals else searching a specific hospital
-    if not hosp:
-        res: list[tuple] = db.session.query(Staff, Hospitals)\
-                        .join(Hospitals, Staff.hosp_id == Hospitals.hosp_id)\
-                        .filter(Staff.service == service)\
-                        .filter(Staff.availability == True).all()
-        data: list[tuple] = [(hosp.hosp_name, staff.staff_name, staff.availability) for staff, hosp in res]
-        return render_template('/public/booking.html', data)
+    data = None
+    if request.method == 'GET':
+        return render_template('/private/user_portal/booking.html')
+    #search operation
+    if request.form.get('action') != 'booking':
+        service = request.form.get('service')
+        hosp = request.form.get('hospital')
+        #if hosp is none, user is searching all hospitals
+        if not hosp:
+            res: list[tuple] = db.session.query(Staff, Hospitals)\
+                            .join(Hospitals, Staff.hosp_id == Hospitals.hosp_id)\
+                            .filter(Staff.service == service)\
+                            .filter(Staff.availability == True).all()
+            data = None
+            if res:
+                data: list[tuple] = [(hosp.hosp_name, staff.staff_name, staff.availability, staff.service) for staff, hosp in res]
+            return render_template('/private/user_portal/booking.html', data=data, method='post', data_content='all')
+        else:
+            #searching for a specific hospital
+            res: tuple = db.session.query(Staff, Hospitals)\
+                            .join(Hospitals, Staff.hosp_id == Hospitals.hosp_id)\
+                            .filter(Staff.service == service)\
+                            .filter(Staff.availability == True)\
+                            .filter(Hospitals.hosp_name == hosp).first()
+            data = None
+            if res:
+                data: tuple = (res[1].hosp_name, res[0].staff_name, res[0].availability, res[0].service)
+            return render_template('/private/user_portal/booking.html', data=data, method='post', data_content='one')
+    #booking operation
     else:
-        res: tuple = db.session.query(Staff, Hospitals)\
-                        .join(Hospitals, Staff.hosp_id == Hospitals.hosp_id)\
-                        .filter(Staff.service == service)\
-                        .filter(Staff.availability == True)\
-                        .filter(Hospitals.hosp_name == hosp).first()
-        data: tuple = (res[1].hosp_name, res[0].staff_name, res[0].availability)
-        return render_template('/public/booking.html', data)     
+        service = request.form.get('service')
+        hospital = request.form.get('hospital')
+        staff = request.form.get('staff')
+        availability = request.form.get('availability')
+        booking_uuid = gen_uuid() #track unlogged in users
+        session['booking_uuid'] = booking_uuid
+        #check if user is logged in
+        if 'user_uuid' in session:
+            new_booking = Bookings(
+                booking_uuid = booking_uuid,
+                service = service,
+                date = get_cur_time(),
+                cost = cost
+            )
 
+
+        
