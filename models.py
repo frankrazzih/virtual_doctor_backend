@@ -43,19 +43,21 @@ class Hospitals(db.Model):
     bookings = relationship('Bookings', back_populates='hospital')
     payments = relationship('Payments', back_populates='hospital')
     revenues = relationship('Revenue', back_populates='hospital')
+    services = relationship('Services', back_populates='hospital')
 
 class Services(db.Model):
-    __tablename__ = 'service_costs'
+    __tablename__ = 'services'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    uuid = Column(pgUUID(as_uuid=True), unique=True, default=uuid.uuid4)
-    service = Column(String, nullable=False)
-    cost = Column(Float, nullable=False)
-    hosp_id = Column(Integer, ForeignKey('hospitals.hosp_id'), nullable=False)
+    service_id = Column(db.Integer, primary_key=True, unique=True)
+    service = Column(db.String(255), nullable=False)
+    cost = Column(db.Float, nullable=False)
 
+    #fk to hospitals
+    hosp_id = Column(db.Integer, db.ForeignKey('hospitals.hosp_id'), nullable=False)
+    
     # relationships
-    hospital = relationship('Hospitals', back_populates='service_costs')
-    UniqueConstraint('service', 'hosp_id', name='uix_service_hosp')
+    hospital = relationship('Hospitals', back_populates='services')
+    db.UniqueConstraint('service', 'hosp_id', name='service_hosp_unique')
 
 # Staff
 class Staff(db.Model):

@@ -15,7 +15,8 @@ from models import (
     Users,
     Hospitals,
     Staff,
-    Bookings
+    Bookings,
+    Services
     )
 from .utils import (
     hash_pwd,
@@ -111,12 +112,14 @@ def sign_in():
         #if method is GET
         return render_template('/private/user_portal/user_sign_in.html')
 
+#logout
 @user_bp.route('/logout', methods=['GET'])
 def logout():
     '''logout a user'''
     del session['user_uuid'] #remove a user's uuid from the session
     return redirect(url_for('public.home'))
 
+#user homepage
 @user_bp.route('/home', methods=['GET'])
 def home():
     '''user homepage'''
@@ -125,6 +128,7 @@ def home():
     else:
         return redirect(url_for('public.home'))
 
+#booking
 @user_bp.route('/booking', methods=['POST', 'GET'])
 def booking():
     '''booking endpoint'''
@@ -137,13 +141,14 @@ def booking():
         hosp = request.form.get('hospital')
         #if hosp is none, user is searching all hospitals
         if not hosp:
-            res: list[tuple] = db.session.query(Staff, Hospitals)\
+            res: list[tuple] = db.session.query(Staff, Hospitals, Services)\
                             .join(Hospitals, Staff.hosp_id == Hospitals.hosp_id)\
+                            .join(Services, Staff.service == Services.service)\
                             .filter(Staff.service == service)\
                             .filter(Staff.availability == True).all()
             data = None
             if res:
-                data: list[tuple] = [(hosp.hosp_name, staff.staff_name, staff.availability, staff.service) for staff, hosp in res]
+                data: list[tuple] = [(hosp.hosp_name, staff.staff_name, staff.availability, staff.service, service.cost) for staff, hosp, service in res]
             return render_template('/private/user_portal/booking.html', data=data, method='post', data_content='all')
         else:
             #searching for a specific hospital
