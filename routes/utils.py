@@ -1,16 +1,28 @@
 '''utility functions'''
 import bcrypt
 import uuid
-from flask_mail import Mail
+from flask_mail import Mail, Message
 import importlib
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 
-#create a mail object
-def create_mail_object():
-    '''return a mail object'''
+executor = ThreadPoolExecutor() #to create a separate thread to send the email
+
+#async email function
+def send_async_mail(app, msg: Mail):
+    #send email asynchronously
+    with app.app_context():
+        mail = Mail(app)
+        mail.send(msg)
+
+#async email function
+def send_email(subject: str, recipients: list[str], body: str):
+    '''prepare to send email asynchronously with flask mail'''
     app_file = importlib.import_module('app')
-    mail = Mail(app_file.app)
-    return mail
+    app = app_file.app
+    msg = Message(subject, sender='naismart@franksolutions.tech', recipients=recipients)
+    msg.body = body
+    executor.submit(send_async_mail, app, msg)
 
 #hash password
 def hash_pwd(password: str)->bytes:

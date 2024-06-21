@@ -7,6 +7,7 @@ from models import db
 from dotenv import load_dotenv
 import os
 from flask_migrate import Migrate
+from flask_mail import Mail
 
 def create_app():
     '''configure the app from different modules'''
@@ -39,7 +40,8 @@ def create_app():
     app.config['MAIL_USE_TLS'] = True
     app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
     app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
-
+    mail = Mail(app)
+    
     return app
 
 #create the app

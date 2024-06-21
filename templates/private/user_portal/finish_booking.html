@@ -99,13 +99,13 @@
     <p>Service: {{service}}</p>
     <p>Available: {{staff_av}}</p>
     <p>Total cost: {{price}}</p>
-    <form action="{{url_for('user.finish_booking')}}">
+    <form action="{{url_for('user.finish_booking')}}" method="post">
         <div class="data_section">
             <input type="hidden" name="booking_action" value="confirm">
             <button type="submit">Confirm booking</button>
         </div>
     </form>
-    <form action="{{url_for('user.finish_booking')}}">
+    <form action="{{url_for('user.finish_booking')}}" method="post">
         <div class="data_section">
             <input type="hidden" name="booking_action" value="cancel">
             <button type="submit">Cancel</button>

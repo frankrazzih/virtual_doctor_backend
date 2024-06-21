@@ -15,7 +15,7 @@ from .utils import (
     hash_pwd,
     check_pwd,
     gen_uuid,
-    create_mail_object,
+    send_email,
     get_cur_time
     )
 #create a blueprint

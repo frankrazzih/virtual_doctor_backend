@@ -160,10 +160,11 @@
         <p>Services: {{ data[1] }} </p>
         <p>Price: {{ data[2] }} </p>
         <!--hidden form to return user selection to server-->
-        <form action="{{url_for('user.booking')}}">
+        <form action="{{url_for('user.booking')}}" method="post">
           <input type="hidden" name="hosp_name" value="{{ data[0] }}">
           <input type="hidden" name="service" value="{{ data[1] }}">
           <input type="hidden" name="price" value="{{ data[2] }}">
+          <input type="hidden" name="hosp_id" value="{{ data[3] }}">
           <input type="hidden" name="action" value="booking">
           <button type="submit">Book now</button>
         </form>
@@ -177,7 +178,7 @@
         <p>Service: {{ res[1] }} </p>
         <p>Price: {{ res[2] }} </p>
         <!--hidden form to return user selection to server-->
-        <form action="{{url_for('user.booking')}}">
+        <form action="{{url_for('user.booking')}}" method="post">
           <input type="hidden" name="hosp_name" value="{{ res[0] }}">
           <input type="hidden" name="service" value="{{ res[1] }}">
           <input type="hidden" name="price" value="{{ res[2] }}">

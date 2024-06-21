@@ -9,7 +9,6 @@ from flask import (
     redirect,
     url_for,
     flash)
-from flask_mail import Message
 from models import (
     db,
     Users,
@@ -22,7 +21,7 @@ from .utils import (
     hash_pwd,
     check_pwd,
     gen_uuid,
-    create_mail_object,
+    send_email,
     get_cur_time,
     clear_session_except
     )
@@ -60,11 +59,11 @@ def register():
         try:
             db.session.add(new_user)
             db.session.commit()
-            # #send an email to the user confirming registration
-            # mail = create_mail_object()
-            # msg = Message('VIRTUAL DOCTOR REGISTRATION', sender='naismart@franksolutions.tech', recipients=[email])
-            # msg.body = 'Thank You for registering with us!\nYour health matters to us'
-            # mail.send(msg)
+            #send an email to the user confirming registration
+            subject = 'VIRTUAL DOCTOR REGISTRATION'
+            recipients = [email]
+            body = 'Thank You for registering with Virtual Doctor!\nQuality healthcare anywhere, anytime.'
+            send_email(subject, recipients, body)
             # '''
             # #send an email to the admin informing of a new user
             # users = session.query(Customers).filter_by(email=email).first()
@@ -162,18 +161,14 @@ def booking():
                             .filter(Services.service == service)\
                             .filter(Hospitals.hosp_name == hosp).first()
             if one_res:
-                data: tuple = (one_res[1].hosp_name, one_res[0].service, one_res[0].cost)
-                hosp_id = one_res[1].hosp_id
+                data: tuple = (one_res[1].hosp_name, one_res[0].service, one_res[0].cost, one_res[1].hosp_id)
             return render_template('/private/user_portal/booking.html', data=data, method='post', data_content='one')
     #booking operation
-    else:
+    elif request.form.get('action') == 'booking':
         service = request.form.get('service')
         hosp_name = request.form.get('hosp_name')
         price = request.form.get('price')
-        #check if there is a hosp_id where many results were displayed
-        tmp_hosp_id = request.form.get('hosp_id')
-        if tmp_hosp_id:
-            hosp_id = tmp_hosp_id
+        hosp_id = request.form.get('hosp_id')
         #get the available staff for that service
         av_staff = db.session.query(Staff)\
                             .filter(Staff.hosp_id == hosp_id)\
@@ -183,6 +178,9 @@ def booking():
             staff_avail_time = av_staff.availability
             staff_id = av_staff.staff_id
             staff_name = av_staff.staff_name
+        else:
+            flash('No doctor is currently available. Please try another hospital.')
+            return redirect(url_for('user.booking'))
         booking_uuid = gen_uuid() #track unlogged in users
         session['booking_uuid'] = booking_uuid
         #store all details in the session
