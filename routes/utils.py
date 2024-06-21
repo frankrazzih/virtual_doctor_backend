@@ -12,6 +12,7 @@ def create_mail_object():
     mail = Mail(app_file.app)
     return mail
 
+#hash password
 def hash_pwd(password: str)->bytes:
     '''hash the password with a salt'''
     pwd_bytes = password.encode('UTF-8')
@@ -19,16 +20,25 @@ def hash_pwd(password: str)->bytes:
     hashed_pwd = bcrypt.hashpw(pwd_bytes, salt)
     return hashed_pwd
 
+#check hashed password
 def check_pwd(password: str, hashed_pwd: bytes)->bool:
     '''checks whether a password is correct'''
     pwd_bytes = password.encode('UTF-8')
     hashed_pwd = hashed_pwd.encode('UTF-8')
     return bcrypt.checkpw(pwd_bytes, hashed_pwd)
 
+#generate uuid
 def gen_uuid()->uuid:
     '''generates a uuid'''
     return str(uuid.uuid4())
 
+#get current time
 def get_cur_time():
     '''returns current time'''
     return datetime.now()
+
+#clear session keys except the one needed
+def clear_session_except(session, key1, key2):
+    keys_to_remove = [key for key in session.keys() if (key != key1 and key != key2)]
+    for key in keys_to_remove:
+        session.pop(key, None)

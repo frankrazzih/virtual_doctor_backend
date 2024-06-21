@@ -23,7 +23,8 @@ from .utils import (
     check_pwd,
     gen_uuid,
     create_mail_object,
-    get_cur_time
+    get_cur_time,
+    clear_session_except
     )
 from sqlalchemy.orm import join
 #create a blueprint
@@ -103,8 +104,12 @@ def sign_in():
             #store user id in the session
             user = db.session.query(Users).filter_by(email=email).first()
             session['user_uuid'] = user.user_uuid
-            session['user']
-            return render_template('/private/user_portal/user_home.html')
+            session['user_id'] = user.user_id
+            #check if user has a booking id to resume booking
+            if session.get('booking_uuid') is not None:
+                return redirect(url_for('user.finish_booking'))
+            flash(f'Successfully logged in as {user.first_name} {user.last_name}')
+            return redirect(url_for('user.home'))
         else:
             flash('Wrong password!. Please try again.')
             return render_template('/private/user_portal/user_sign_in.html')
@@ -116,7 +121,7 @@ def sign_in():
 @user_bp.route('/logout', methods=['GET'])
 def logout():
     '''logout a user'''
-    del session['user_uuid'] #remove a user's uuid from the session
+    session.clear()
     return redirect(url_for('public.home'))
 
 #user homepage
@@ -132,51 +137,109 @@ def home():
 @user_bp.route('/booking', methods=['POST', 'GET'])
 def booking():
     '''booking endpoint'''
-    data = None
     if request.method == 'GET':
         return render_template('/private/user_portal/booking.html')
+    data = None
+    hosp_id = None
     #search operation
-    if request.form.get('action') != 'booking':
+    if request.form.get('action') == 'searching':
         service = request.form.get('service')
         hosp = request.form.get('hospital')
-        #if hosp is none, user is searching all hospitals
+        #if hosp is none,
         if not hosp:
-            res: list[tuple] = db.session.query(Staff, Hospitals, Services)\
-                            .join(Hospitals, Staff.hosp_id == Hospitals.hosp_id)\
-                            .join(Services, Staff.service == Services.service)\
-                            .filter(Staff.service == service)\
-                            .filter(Staff.availability == True).all()
-            data = None
-            if res:
-                data: list[tuple] = [(hosp.hosp_name, staff.staff_name, staff.availability, staff.service, service.cost) for staff, hosp, service in res]
+            #get all hospitals offering the services
+            all_res: list[tuple] = db.session.query(Services, Hospitals)\
+                            .join(Hospitals, Services.hosp_id == Hospitals.hosp_id)\
+                            .filter(Services.service == service)\
+                            .all()
+            if all_res:
+                data: list[tuple] = [(hosp.hosp_name, service.service, service.cost, hosp.hosp_id) for service, hosp in all_res]
             return render_template('/private/user_portal/booking.html', data=data, method='post', data_content='all')
         else:
             #searching for a specific hospital
-            res: tuple = db.session.query(Staff, Hospitals)\
-                            .join(Hospitals, Staff.hosp_id == Hospitals.hosp_id)\
-                            .filter(Staff.service == service)\
-                            .filter(Staff.availability == True)\
+            one_res: tuple = db.session.query(Services, Hospitals)\
+                            .join(Hospitals, Services.hosp_id == Hospitals.hosp_id)\
+                            .filter(Services.service == service)\
                             .filter(Hospitals.hosp_name == hosp).first()
-            data = None
-            if res:
-                data: tuple = (res[1].hosp_name, res[0].staff_name, res[0].availability, res[0].service)
+            if one_res:
+                data: tuple = (one_res[1].hosp_name, one_res[0].service, one_res[0].cost)
+                hosp_id = one_res[1].hosp_id
             return render_template('/private/user_portal/booking.html', data=data, method='post', data_content='one')
     #booking operation
     else:
         service = request.form.get('service')
-        hospital = request.form.get('hospital')
-        staff = request.form.get('staff')
-        availability = request.form.get('availability')
+        hosp_name = request.form.get('hosp_name')
+        price = request.form.get('price')
+        #check if there is a hosp_id where many results were displayed
+        tmp_hosp_id = request.form.get('hosp_id')
+        if tmp_hosp_id:
+            hosp_id = tmp_hosp_id
+        #get the available staff for that service
+        av_staff = db.session.query(Staff)\
+                            .filter(Staff.hosp_id == hosp_id)\
+                            .filter(Staff.availability == True)\
+                            .first()
+        if av_staff:
+            staff_avail_time = av_staff.availability
+            staff_id = av_staff.staff_id
+            staff_name = av_staff.staff_name
         booking_uuid = gen_uuid() #track unlogged in users
         session['booking_uuid'] = booking_uuid
+        #store all details in the session
+        session['service'] = service
+        session['hosp_name'] = hosp_name
+        session['price'] = price
+        session['hosp_id'] = hosp_id
+        session['staff_name'] = staff_name
+        session['staff_id'] = staff_id
+        session['staff_avail_time'] = staff_avail_time
         #check if user is logged in
         if 'user_uuid' in session:
+            return redirect(url_for('user.finish_booking'))
+        else:
+            return redirect(url_for('user.sign_in'))
+
+#finish booking
+@user_bp.route('/finish_booking', methods=['GET', 'POST'])
+def finish_booking():
+    if request.method == 'GET':
+        #retun the booking details for the user to confirm
+        return render_template('/private/user_portal/finish_booking.html', 
+                               hosp_name=session.get("hosp_name"), 
+                               staff_name=session.get("staff_name"),
+                                 service=session.get("service"), 
+                                 staff_av=session.get("staff_avail_time"),
+                                   price=session.get("price"))
+    
+    else:
+        #complete booking
+        action = request.form.get('booking_action')
+        if action == 'cancel':
+            #remove booking details from the session
+            clear_session_except(session, 'user_id', 'user_uuid')
+            flash('You have cancelled your booking!')
+            return redirect(url_for('user.home'))
+        elif action == 'confirm':
+            #store booking details in the booking table
             new_booking = Bookings(
-                booking_uuid = booking_uuid,
-                service = service,
+                booking_uuid = session.get('booking_uuid'),
+                service = session.get('service'),
                 date = get_cur_time(),
-                cost = cost
+                cost = session.get('price'),
+                complete = False,
+                user_id = session.get('user_id'),
+                hosp_id = session.get('hosp_id'),
+                staff_id = session.get('staff_id')
             )
+            try:
+                db.session.add(new_booking)
+                db.session.commit()
+                #send email to hosp and user notifying them of the booking
+                #clear the session
+                clear_session_except(session, 'user_id', 'user_uuid')
+                flash('Booking was successful!')
+                return redirect(url_for('user.home'))
+            except:
+                flash('Booking failed! Try again.')
+                redirect(url_for('user.booking'))
 
-
-        

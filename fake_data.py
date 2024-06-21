@@ -6,21 +6,7 @@ from datetime import datetime, timedelta
 # Initialize Faker to generate fake data
 fake = Faker()
 
-# Generate hospitals data
-def generate_hospitals(num_hospitals):
-    hospitals = []
-    for _ in range(num_hospitals):
-        hosp_uuid = str(uuid.uuid4())  # Generate a unique UUID
-        hosp_name = fake.
-        hosp_location = fake.address()
-        contact = fake.phone_number()
-        email = fake.email()
-        password = fake.password()
-        reg_date = fake.date_between(start_date='-10y', end_date='today')
-        hospitals.append((hosp_uuid, hosp_name, hosp_location, contact, email, password, reg_date))
-    return hospitals
-
-# Generate staff data
+# Services list
 services_list = [
     "Emergency Care",
     "Cardiology",
@@ -36,50 +22,37 @@ services_list = [
     "Gynecology"
 ]
 
-def generate_staff(num_staff, num_hospitals):
-    staff = []
-    for _ in range(num_staff):
-        staff_uuid = str(uuid.uuid4())  # Generate a unique UUID
-        staff_name = fake.name()
+# Generate services data
+def generate_services(num_services, num_hospitals):
+    services = []
+    for _ in range(num_services):
         service = random.choice(services_list)
-        availability = random.choice([True, False])
-        hosp_id = random.randint(1, num_hospitals)  # Assign staff to a random hospital
-        staff.append((staff_uuid, staff_name, service, availability, hosp_id))
-    return staff
+        cost = round(random.uniform(100, 1000), 2)  # Generate a random cost
+        hosp_id = random.randint(1, num_hospitals)  # Assign service to a random hospital
+        services.append((service, cost, hosp_id))
+    return services
 
-# Number of hospitals and staff to generate
+# Number of services and hospitals to generate
+num_services = 50
 num_hospitals = 20
-num_staff = 100
 
-hospitals_data = generate_hospitals(num_hospitals)
-staff_data = generate_staff(num_staff, num_hospitals)
+services_data = generate_services(num_services, num_hospitals)
 
-# Generate SQL insert statements
-def generate_sql_inserts_hospitals(data):
+# Generate SQL insert statements for services
+def generate_sql_inserts_services(data):
     sql_statements = []
-    for hosp in data:
-        sql = f"INSERT INTO hospitals (hosp_uuid, hosp_name, hosp_location, contact, email, password, reg_date) VALUES ('{hosp[0]}', '{hosp[1]}', '{hosp[2]}', '{hosp[3]}', '{hosp[4]}', '{hosp[5]}', '{hosp[6]}');"
-        sql_statements.append(sql)
-    return sql_statements
-
-def generate_sql_inserts_staff(data):
-    sql_statements = []
-    for staff in data:
-        sql = f"INSERT INTO staff (staff_uuid, staff_name, service, availability, hosp_id) VALUES ('{staff[0]}', '{staff[1]}', '{staff[2]}', {staff[3]}, {staff[4]});"
+    for service in data:
+        sql = f"INSERT INTO services (service, cost, hosp_id) VALUES ('{service[0]}', {service[1]}, {service[2]});"
         sql_statements.append(sql)
     return sql_statements
 
 # Generate SQL statements
-hospitals_sql = generate_sql_inserts_hospitals(hospitals_data)
-staff_sql = generate_sql_inserts_staff(staff_data)
+services_sql = generate_sql_inserts_services(services_data)
 
 # Write SQL statements to a file
-with open('fake_data.sql', 'w') as f:
-    f.write('-- SQL statements for inserting hospitals\n\n')
-    for sql in hospitals_sql:
-        f.write(sql + '\n')
-    f.write('\n-- SQL statements for inserting staff\n\n')
-    for sql in staff_sql:
+with open('fake_services_data.sql', 'w') as f:
+    f.write('-- SQL statements for inserting services\n\n')
+    for sql in services_sql:
         f.write(sql + '\n')
 
-print("SQL file generated successfully.")
+print("SQL file for services generated successfully.")
