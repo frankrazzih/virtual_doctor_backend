@@ -93,15 +93,15 @@ def sign_in():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        hashed_pwd = db.session.query(Users.password).filter_by(email=email).first()
+        user = db.session.query(Users).filter_by(email=email).first()
+        hashed_pwd = user.password
         if hashed_pwd is not None:
-            correct_pwd = check_pwd(password, hashed_pwd[0])
+            correct_pwd = check_pwd(password, hashed_pwd)
         else:
             flash('Email does not exist!. Please try again.')
             return render_template('/private/user_portal/user_sign_in.html')
         if correct_pwd:
             #store user id in the session
-            user = db.session.query(Users).filter_by(email=email).first()
             session['user_uuid'] = user.user_uuid
             session['user_id'] = user.user_id
             #check if user has a booking id to resume booking

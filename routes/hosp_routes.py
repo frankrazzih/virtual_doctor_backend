@@ -5,6 +5,9 @@ from flask import (
     render_template, 
     request,
     jsonify,
+    session,
+    redirect,
+    url_for,
     flash)
 from flask_mail import Message
 from models import (
@@ -47,7 +50,7 @@ def register():
         try:
             db.session.add(new_hosp)
             db.session.commit()
-            # #send an email to the user confirming registration
+            # #send an email to the hospital confirming registration
             # mail = create_mail_object()
             # msg = Message('VIRTUAL DOCTOR REGISTRATION', sender='naismart@franksolutions.tech', recipients=[email])
             # msg.body = 'Thank You for registering with us!\nYour health matters to us'
@@ -81,17 +84,38 @@ def sign_in():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        hashed_pwd = db.session.query(Hospitals.password).filter_by(email=email).first()
+        hosp = db.session.query(Hospitals).filter_by(email=email).first()
+        hashed_pwd = hosp.password
         if hashed_pwd is not None:
-            correct_pwd = check_pwd(password, hashed_pwd[0])
+            correct_pwd = check_pwd(password, hashed_pwd)
         else:
             flash('Email does not exist!. Please try again.')
             return render_template('/private/hospital_portal/hospital_sign_in.html')
         if correct_pwd:
-            return jsonify('Signed in successfully as hospital!')
+            session['hosp_id'] = hosp.hosp_id
+            session['hosp_uuid'] = hosp.hosp_uuid
+            return redirect(url_for('hospital.home'))
         else:
             flash('Wrong password!. Please try again.')
             return render_template('/private/hospital_portal/hospital_sign_in.html')
     elif request.method == 'GET':
         #if method is GET
         return render_template('/private/hospital_portal/hospital_sign_in.html')
+    
+#logout
+@hospital_bp.route('/logout', methods=['GET'])
+def logout():
+    '''logout a hospital'''
+    session.clear()
+    return redirect(url_for('public.home'))
+    
+#hospital homepage
+@hospital_bp.route('/home', methods=['GET'])
+def home():
+    '''returns hospital portal homepage'''
+    return render_template('/private/hospital_portal/hosp_home.html')
+
+#register staff
+@hospital_bp.route('/staff')
+def staff():
+    '''manage the hospitals staff'''
