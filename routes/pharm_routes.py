@@ -72,26 +72,21 @@ def register():
         #render the registration page
         return render_template('/private/pharmacy_portal/pharmacy_sign_up.html')
 
-#sign_in endpoint
-@pharmacy_bp.route('/sign_in', methods=['POST', 'GET'])
+# sign_in endpoint
+@pharmacy_bp.route('/sign_in', methods=['POST'])
 def sign_in():
-    """checks if the enterd password matches the one 
-    stored in the database for the pharmacy
-    """
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        hashed_pwd = db.session.query(Pharmacy.password).filter_by(email=email).first()
-        if hashed_pwd is not None:
-            correct_pwd = check_pwd(password, hashed_pwd[0])
-        else:
-            flash('Email does not exist!. Please try again.')
-            return render_template('/private/pharmacy_portal/pharmacy_sign_in.html')
+    """Checks if the entered password matches the one stored in the database for the pharmacy"""
+    email = request.form['email']
+    password = request.form['password']
+    hashed_pwd = db.session.query(Pharmacy.password).filter_by(email=email).first()
+    
+    if hashed_pwd is not None:
+        correct_pwd = check_pwd(password, hashed_pwd[0])
         if correct_pwd:
             return jsonify('Signed in successfully as pharmacy!')
         else:
-            flash('Wrong password!. Please try again.')
-            return render_template('/private/pharmacy_portal/pharmacy_sign_in.html')
-    elif request.method == 'GET':
-        #if method is GET
-        return render_template('/private/pharmacy_portal/pharmacy_sign_in.html')
+            flash('Wrong password! Please try again.')
+    else:
+        flash('Email does not exist! Please try again.')
+
+    return render_template('/private/pharmacy_portal/pharmacy_sign_in.html')

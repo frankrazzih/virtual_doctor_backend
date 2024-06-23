@@ -4,7 +4,7 @@ from flask import (
     Blueprint, 
     render_template, 
     request, 
-    session as flask_session, 
+    url_for,
     flash)
 from werkzeug.security import (generate_password_hash, 
                                check_password_hash)
@@ -27,7 +27,13 @@ def sign_in():
         pass
     else:
         #if method is GET
-        return render_template('/public/sign_in.html')
+        return render_template('/public/sign_in.html', 
+                        user_sign_in=url_for('user.sign_in'), 
+                        hospital_sign_in=url_for('hospital.sign_in'), 
+                        pharmacy_sign_in=url_for('pharmacy.sign_in'),
+                        user_register=url_for('user.register'), 
+                        hospital_register=url_for('hospital.register'), 
+                        pharmacy_register=url_for('pharmacy.register'))
 
 
 #renders services page

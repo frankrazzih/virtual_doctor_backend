@@ -84,37 +84,35 @@ def register():
         #render the registration page
         return render_template('/private/user_portal/user_sign_up.html')
 
-#sign_in endpoint
-@user_bp.route('/sign_in', methods=['POST', 'GET'])
+# sign_in endpoint
+@user_bp.route('/sign_in', methods=['POST'])
 def sign_in():
-    """checks if the enterd password matches the one 
-    stored in the database for the customer
-    """
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        user = db.session.query(Users).filter_by(email=email).first()
+    """Checks if the entered password matches the one stored in the database for the customer"""
+    email = request.form['email']
+    password = request.form['password']
+    user = db.session.query(Users).filter_by(email=email).first()
+    
+    if user:
         hashed_pwd = user.password
-        if hashed_pwd is not None:
-            correct_pwd = check_pwd(password, hashed_pwd)
-        else:
-            flash('Email does not exist!. Please try again.')
-            return render_template('/private/user_portal/user_sign_in.html')
+        correct_pwd = check_pwd(password, hashed_pwd)
+        
         if correct_pwd:
-            #store user id in the session
+            # Store user id in the session
             session['user_uuid'] = user.user_uuid
             session['user_id'] = user.user_id
-            #check if user has a booking id to resume booking
+            
+            # Check if user has a booking id to resume booking
             if session.get('booking_uuid') is not None:
                 return redirect(url_for('user.finish_booking'))
+            
             flash(f'Successfully logged in as {user.first_name} {user.last_name}')
             return redirect(url_for('user.home'))
         else:
-            flash('Wrong password!. Please try again.')
-            return render_template('/private/user_portal/user_sign_in.html')
-    elif request.method == 'GET':
-        #if method is GET
-        return render_template('/private/user_portal/user_sign_in.html')
+            flash('Wrong password! Please try again.')
+    else:
+        flash('Email does not exist! Please try again.')
+
+    return render_template('/private/user_portal/user_sign_in.html')
 
 #logout
 @user_bp.route('/logout', methods=['GET'])

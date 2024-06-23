@@ -76,30 +76,26 @@ def register():
         return render_template('/private/hospital_portal/hospital_sign_up.html')
 
 #sign_in endpoint
-@hospital_bp.route('/sign_in', methods=['POST', 'GET'])
+@hospital_bp.route('/sign_in', methods=['POST'])
 def sign_in():
     """checks if the enterd password matches the one 
     stored in the database for the hospital
     """
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        hosp = db.session.query(Hospitals).filter_by(email=email).first()
-        hashed_pwd = hosp.password
-        if hashed_pwd is not None:
-            correct_pwd = check_pwd(password, hashed_pwd)
-        else:
-            flash('Email does not exist!. Please try again.')
-            return render_template('/private/hospital_portal/hospital_sign_in.html')
-        if correct_pwd:
-            session['hosp_id'] = hosp.hosp_id
-            session['hosp_uuid'] = hosp.hosp_uuid
-            return redirect(url_for('hospital.home'))
-        else:
-            flash('Wrong password!. Please try again.')
-            return render_template('/private/hospital_portal/hospital_sign_in.html')
-    elif request.method == 'GET':
-        #if method is GET
+    email = request.form['email']
+    password = request.form['password']
+    hosp = db.session.query(Hospitals).filter_by(email=email).first()
+    hashed_pwd = hosp.password
+    if hashed_pwd is not None:
+        correct_pwd = check_pwd(password, hashed_pwd)
+    else:
+        flash('Email does not exist!. Please try again.')
+        return render_template('/private/hospital_portal/hospital_sign_in.html')
+    if correct_pwd:
+        session['hosp_id'] = hosp.hosp_id
+        session['hosp_uuid'] = hosp.hosp_uuid
+        return redirect(url_for('hospital.home'))
+    else:
+        flash('Wrong password!. Please try again.')
         return render_template('/private/hospital_portal/hospital_sign_in.html')
     
 #logout
