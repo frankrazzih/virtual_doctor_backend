@@ -72,12 +72,12 @@ def register():
             # mail.send(msg)
             # '''
             flash('Registration was successful')
-            return render_template('/private/user_portal/user_sign_in.html')
+            return redirect(url_for('public.sign_in', portal='user'))
         #errors arising due to unique constraint violation
         except:
             db.session.rollback()
             flash('Number or email already exists!')
-            return render_template('/public/sign_in.html')
+            return render_template('/private/user/user_sign_up.html')
         finally:
             db.session.close()
     else:
@@ -109,10 +109,10 @@ def sign_in():
             return redirect(url_for('user.home'))
         else:
             flash('Wrong password! Please try again.')
+            return redirect(url_for('public.sign_in', portal='user'))
     else:
         flash('Email does not exist! Please try again.')
-
-    return render_template('/private/user_portal/user_sign_in.html')
+        return redirect(url_for('public.sign_in', portal='user'))
 
 #logout
 @user_bp.route('/logout', methods=['GET'])

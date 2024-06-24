@@ -79,34 +79,10 @@
           </a>
         </div>
 
-        <script>
-          function select_portal(portal) {
-              const form = document.getElementById('sign_in_form');
-              const register = document.getElementById('register');
-              if (portal === 'user') {
-                  form.action = "{{ user_sign_in }}";
-                  register.href = "{{ user_register }}";
-              } else if (portal === 'hospital') {
-                  form.action = "{{ hospital_sign_in }}";
-                  register.href = "{{ hospital_register }}";
-              } else if (portal === 'pharmacy') {
-                  form.action = "{{ pharmacy_sign_in }}";
-                  register.href = "{{ pharmacy_register }}";
-              }
-              document.getElementById('form_header').innerHTML = `Sign in to ${portal} portal`;
-          }
-      </script>
-        <!--select portal to sign in to-->
-        <div class="container_info">
-        <h4 id="form_header" style="margin-bottom: 0.2rem;" >Select portal to sign in to</h4> <br>
-          <button onclick="select_portal('user')" id="patient">Patient portal</button>
-          <button onclick="select_portal('hospital')" id="hospital">Hospital portal</button>
-          <button onclick="select_portal('pharmacy')" id="pharmacy">Pharmacy portal</button>
-        </div>
 
         <!--sign form for user-->
     <section class="section">
-      <form id="sign_in_form" action="" method="post">
+      <form id="sign_in_form" action="{{sign_in}}" method="post">
 
           <div class="container">
               <img src="{{url_for('static', filename='images/padlock.jpeg')}}" alt="sign in" id="icon"> 
@@ -144,7 +120,7 @@
               <a class="search" href="{{url_for('public.pwd_reset')}}">Forgot password?</a>
           </div>
           <div class="form_link">
-              <a id="register" class="search" href="{{url_for('user.register')}}"><span style="color: black;">Or create an account </span>Here</a>
+              <a id="register" class="search" href="{{register}}"><span style="color: black;">Or create an account </span>Here</a>
           </div>
 
           <div class="submit">

@@ -18,22 +18,17 @@ def home():
     return render_template('/public/index.html')
 
 #sign_in endpoint
-@public_bp.route('/sign_in', methods=['POST', 'GET'])
+@public_bp.route('/sign_in', methods=['GET'])
 def sign_in():
     """
     check the portal requested to sign in
     """
-    if request.method == 'POST':
-        pass
-    else:
-        #if method is GET
-        return render_template('/public/sign_in.html', 
-                        user_sign_in=url_for('user.sign_in'), 
-                        hospital_sign_in=url_for('hospital.sign_in'), 
-                        pharmacy_sign_in=url_for('pharmacy.sign_in'),
-                        user_register=url_for('user.register'), 
-                        hospital_register=url_for('hospital.register'), 
-                        pharmacy_register=url_for('pharmacy.register'))
+    portal = request.args.get('portal')
+    if not portal:
+        return render_template('/public/select_portal.html')    
+    return render_template('/public/sign_in.html', 
+                        sign_in=url_for(f'{portal}.sign_in'),
+                        register=url_for(f'{portal}.register'))
 
 
 #renders services page

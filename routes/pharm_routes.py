@@ -5,6 +5,8 @@ from flask import (
     render_template, 
     request,
     jsonify,
+    redirect,
+    url_for,
     flash)
 from flask_mail import Message
 from models import (
@@ -60,14 +62,12 @@ def register():
             # mail.send(msg)
             # '''
             flash('Registration was successful')
-            return render_template('/private/pharmacy_portal/pharmacy_sign_in.html')
+            return redirect(url_for('public.sign_in', portal='pharmacy'))
         #errors arising due to unique constraint violation
         except:
             db.session.rollback()
             flash('Number or email already exists!')
-            return render_template('/private/pharmacy_portal/pharmacy_sign_in.html')
-        finally:
-            db.session.close()
+            return render_template('/private/pharmacy_portal/pharmacy_sign_up.html')
     else:
         #render the registration page
         return render_template('/private/pharmacy_portal/pharmacy_sign_up.html')
@@ -86,7 +86,8 @@ def sign_in():
             return jsonify('Signed in successfully as pharmacy!')
         else:
             flash('Wrong password! Please try again.')
+            return redirect(url_for('public.sign_in', portal='pharmacy'))
     else:
         flash('Email does not exist! Please try again.')
+        return redirect(url_for('public.sign_in', portal='pharmacy'))
 
-    return render_template('/private/pharmacy_portal/pharmacy_sign_in.html')

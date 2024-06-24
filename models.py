@@ -64,10 +64,12 @@ class Staff(db.Model):
     __tablename__ = 'staff'
 
     staff_id = db.Column(db.Integer, unique=True, primary_key=True)
-    staff_uuid = db.Column(db.String(36), unique=True)  # Updated to String
+    staff_uuid = db.Column(db.String(36), unique=True)
     staff_name = db.Column(db.String(255))
+    email = db.Column(db.String(255), unique=True)
+    contact = db.Column(db.String(30), unique=True)
     service = db.Column(db.String(255))
-    availability = db.Column(db.Boolean)
+    availability = db.Column(db.Boolean, default=True)
     
     # fk to hospitals
     hosp_id = db.Column(db.Integer, db.ForeignKey('hospitals.hosp_id'))

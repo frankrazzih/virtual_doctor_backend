@@ -13,6 +13,8 @@ from flask_mail import Message
 from models import (
     db,
     Hospitals,
+    Staff,
+    Services
     )
 from .utils import (
     hash_pwd,
@@ -63,14 +65,12 @@ def register():
             # mail.send(msg)
             # '''
             flash('Registration was successful')
-            return render_template('/private/hospital_portal/hospital_sign_in.html')
+            return redirect(url_for('public.sign_in', portal='hospital'))
         #errors arising due to unique constraint violation
         except:
             db.session.rollback()
             flash('Number or email already exists!')
-            return render_template('/private/hospital_portal/hospital_sign_in.html')
-        finally:
-            db.session.close()
+            return render_template('/private/hospital_portal/hospital_sign_up.html')
     else:
         #render the registration page
         return render_template('/private/hospital_portal/hospital_sign_up.html')
@@ -84,19 +84,19 @@ def sign_in():
     email = request.form['email']
     password = request.form['password']
     hosp = db.session.query(Hospitals).filter_by(email=email).first()
+    if not hosp:
+        flash('Email does not exist!. Please try again.')
+        return redirect(url_for('public.sign_in', portal='hospital'))
     hashed_pwd = hosp.password
     if hashed_pwd is not None:
         correct_pwd = check_pwd(password, hashed_pwd)
-    else:
-        flash('Email does not exist!. Please try again.')
-        return render_template('/private/hospital_portal/hospital_sign_in.html')
     if correct_pwd:
         session['hosp_id'] = hosp.hosp_id
         session['hosp_uuid'] = hosp.hosp_uuid
         return redirect(url_for('hospital.home'))
     else:
         flash('Wrong password!. Please try again.')
-        return render_template('/private/hospital_portal/hospital_sign_in.html')
+        return redirect(url_for('public.sign_in', portal='hospital'))
     
 #logout
 @hospital_bp.route('/logout', methods=['GET'])
@@ -112,6 +112,59 @@ def home():
     return render_template('/private/hospital_portal/hosp_home.html')
 
 #register staff
-@hospital_bp.route('/staff')
+@hospital_bp.route('/staff', methods=['POST'])
 def staff():
-    '''manage the hospitals staff'''
+    '''register the hospitals staff'''
+    counter = 1
+    while True:
+        staff_name = request.form.get(f'staff{counter}')
+        service = request.form.get(f'service{counter}')
+        contact = request.form.get(f'contact{counter}')
+        email = request.form.get(f'email{counter}')
+        print(staff_name,service,contact,email,f'staff{counter}')
+        counter += 1
+        #all entries have been got
+        if staff_name is None or service is None or contact is None or email is None:
+            flash('Staff upload was successful!')
+            return redirect(url_for('hospital.home'))
+        new_staff = Staff(
+            staff_uuid = gen_uuid(),
+            staff_name = staff_name,
+            email = email,
+            contact = contact,
+            service = service,
+            hosp_id = session['hosp_id']
+        )
+        try:
+            db.session.add(new_staff)
+            db.session.commit()
+        except Exception as error:
+            print(error)
+            flash('An error occured please try again!')
+            return redirect(url_for('hospital.home'))
+
+#register services
+@hospital_bp.route('/services', methods=['POST'])
+def services():
+    '''register the services offered by the hospital'''
+    counter = 1
+    while True:
+        service = request.form.get(f'service{counter}')
+        cost = request.form.get(f'cost{counter}')
+        counter += 1
+        #all entries have been got
+        if service is None or cost is None:
+            flash('Services upload was successful!')
+            return redirect(url_for('hospital.home'))
+        new_service = Services(
+            cost = cost,
+            service = service
+        )
+        try:
+            db.session.add(new_service)
+            db.session.commit()
+        except:
+            flash('An error occured please try again!')
+            return redirect(url_for('hospital.home'))
+        
+
