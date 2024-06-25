@@ -193,7 +193,7 @@ def booking():
         if 'user_uuid' in session:
             return redirect(url_for('user.finish_booking'))
         else:
-            return redirect(url_for('user.sign_in'))
+            return redirect(url_for('public.sign_in', portal='user'))
 
 #finish booking
 @user_bp.route('/finish_booking', methods=['GET', 'POST'])

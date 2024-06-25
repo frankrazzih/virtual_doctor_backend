@@ -1,10 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hospital Registration</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Welcome to Our Hospital, a leading healthcare
+     provider offering comprehensive healthcare services including emergency care,
+      pediatric care, cardiology, orthopedics, maternity care, neurology, oncology,
+       and mental health services. Experience our state-of-the-art virtual doctor 
+       service for online consultations. Our team of expert doctors and nurses are 
+       dedicated to providing the highest quality of care. Book your appointment today 
+       for top-notch medical services.">
+    <title>Virtual Doctor | telemedicine | health | hospital</title>
+    <link rel="icon" type="image/jpeg" href="{{url_for('static', filename='images/logo.jpeg')}}">
     <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='hosp_styles.css')}}">
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='styles.css')}}">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5632460936680731"
+ crossorigin="anonymous"></script>
+</head>
+<body>
+    
+    <!--side menu-->
+    <div class="cont">
+      <br>
+        <img src="{{url_for('static', filename='images/logo.jpeg')}}" alt="logo" id="phone_logo">
+        <a href="{{url_for('hospital.home')}}">Home</a>
+        <a href="{{url_for('hospital.logout')}}">logout</a>
+    </div>
+    
+        <!--navbar for large devices-->
+        <div class="large">
+          <div class="logo">
+            <a href="{{url_for('hospital.home')}}" class="large_logo">
+            <img src="{{url_for('static', filename='images/logo.jpeg')}}" alt="logo" id="phone_logo">
+            </a>
+            <p><i><strong>"Your health matters"</strong></i></p>
+          </div>
+          <a href="{{url_for('hospital.home')}}">Home</a>
+          <a href="{{url_for('hospital.logout')}}">logout</a>
+        </div>
+        
     <script>
         document.addEventListener('DOMContentLoaded', function() {
     let staffCounter = 1; // initial number of staff entries

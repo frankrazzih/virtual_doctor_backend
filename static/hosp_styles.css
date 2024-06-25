@@ -1,12 +1,47 @@
+/* styles.css */
 body {
     font-family: Arial, sans-serif;
     background-color: #f0f2f5;
     margin: 0;
     padding: 0;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
+}
+
+.cont, .large {
+    width: 100%;
+    background-color: #007bff;
+    color: white;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 10px 0;
+}
+
+.cont a, .large a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 10px 20px;
+    transition: background-color 0.3s;
+}
+
+.cont a:hover, .large a:hover {
+    background-color: #0056b3;
+    border-radius: 5px;
+}
+
+#phone_logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.large_logo img {
+    width: 50px;
+    height: 50px;
 }
 
 .form-container {
@@ -16,6 +51,7 @@ body {
     padding: 30px;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
 }
 
 h1 {
@@ -53,6 +89,108 @@ form {
 
 #service-entries .entry input, #service-entries .entry select {
     width: calc(50% - 10px); /* For service form */
+}
+
+.submit-button {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.submit-button:hover {
+    background-color: #0056b3;
+}
+
+.highlight {
+    border-color: red;
+}
+
+/* Unified Portal Selection */
+.portal-selection {
+    text-align: center;
+    padding: 50px;
+}
+
+.portals {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+.portal {
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    width: 30%;
+}
+
+.portal h2 {
+    margin-bottom: 10px;
+}
+
+.portal button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* Modal */
+.modal {
+    display: none; 
+    position: fixed; 
+    z-index: 1; 
+    left: 0;
+    top: 0;
+    width: 100%; 
+    height: 100%; 
+    overflow: auto; 
+    background-color: rgb(0,0,0); 
+    background-color: rgba(0,0,0,0.4); 
+    padding-top: 60px;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto; 
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%; 
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
 }
 
 .submit-button {

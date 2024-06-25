@@ -121,7 +121,6 @@ def staff():
         service = request.form.get(f'service{counter}')
         contact = request.form.get(f'contact{counter}')
         email = request.form.get(f'email{counter}')
-        print(staff_name,service,contact,email,f'staff{counter}')
         counter += 1
         #all entries have been got
         if staff_name is None or service is None or contact is None or email is None:
@@ -158,12 +157,14 @@ def services():
             return redirect(url_for('hospital.home'))
         new_service = Services(
             cost = cost,
-            service = service
+            service = service,
+            hosp_id = session.get('hosp_id')
         )
         try:
             db.session.add(new_service)
             db.session.commit()
-        except:
+        except Exception as error:
+            print(error)
             flash('An error occured please try again!')
             return redirect(url_for('hospital.home'))
         
