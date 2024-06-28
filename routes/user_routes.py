@@ -25,6 +25,7 @@ from .utils import (
     get_cur_time,
     clear_session_except
     )
+from .meeting_routes import create_room
 from sqlalchemy.orm import join
 #create a blueprint
 user_bp = Blueprint('user', __name__)
@@ -176,6 +177,7 @@ def booking():
             staff_avail_time = av_staff.availability
             staff_id = av_staff.staff_id
             staff_name = av_staff.staff_name
+            staff_uuid = av_staff.staff_uuid
         else:
             flash('No doctor is currently available. Please try another hospital.')
             return redirect(url_for('user.booking'))
@@ -189,6 +191,7 @@ def booking():
         session['staff_name'] = staff_name
         session['staff_id'] = staff_id
         session['staff_avail_time'] = staff_avail_time
+        session['staff_uuid'] = staff_uuid
         #check if user is logged in
         if 'user_uuid' in session:
             return redirect(url_for('user.finish_booking'))
@@ -210,6 +213,13 @@ def finish_booking():
     else:
         #complete booking
         action = request.form.get('booking_action')
+        sch_time = request.form.get('consultation_time')
+        if sch_time == 'immediate':
+            #create the meeting immediately
+            time = None
+        else:
+            #schedule the meeting to start at the specified time
+            time = request.form.get('scheduled_time')
         if action == 'cancel':
             #remove booking details from the session
             clear_session_except(session, 'user_id', 'user_uuid')
@@ -221,6 +231,7 @@ def finish_booking():
                 booking_uuid = session.get('booking_uuid'),
                 service = session.get('service'),
                 date = get_cur_time(),
+                scheduled_time = time,
                 cost = session.get('price'),
                 complete = False,
                 user_id = session.get('user_id'),
@@ -231,11 +242,20 @@ def finish_booking():
                 db.session.add(new_booking)
                 db.session.commit()
                 #send email to hosp and user notifying them of the booking
+                #call create meeting to get room id
+                #create link to meeting with the room id and user id
+                #the links takes user to meeting route
+                #check if user has room id and user id
+                #if true, direct them to the meeting page
                 #clear the session
+                room_id = create_room()
+                user_url = f'http://127.0.0.1:5000/meeting?user_id={session["user_uuid"]}&meeting_id={room_id}'
+                staff_url = f'http://127.0.0.1:5000/meeting?user_id={session["staff_uuid"]}&meeting_id={room_id}'
+
                 clear_session_except(session, 'user_id', 'user_uuid')
                 flash('Booking was successful!')
-                return redirect(url_for('user.home'))
+                return render_template('/private/user_portal/user_home.html', url=user_url)
             except:
                 flash('Booking failed! Try again.')
-                redirect(url_for('user.booking'))
+                return redirect(url_for('user.booking'))
 

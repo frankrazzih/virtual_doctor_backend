@@ -1,3 +1,6 @@
+.time-picker-section {
+    display: none;
+}
 /*data div*/
 .data_section{
     display: flex;

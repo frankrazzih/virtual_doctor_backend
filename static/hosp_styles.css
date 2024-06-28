@@ -213,3 +213,71 @@ form {
 .highlight {
     border-color: red;
 }
+/* Styles for Booking Details */
+.booking-details {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+}
+
+.booking-details p {
+    margin: 10px 0;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Styles for Form */
+.data_section {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+}
+
+.data_section label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.data_section input[type="radio"] {
+    margin-right: 10px;
+}
+
+.time-picker-section {
+    display: none;
+    margin-top: 10px;
+}
+
+.time-picker-section label {
+    margin-bottom: 5px;
+}
+
+.time-picker-section input {
+    padding: 8px;
+    border: 1px solid #cccccc;
+    border-radius: 5px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.data_section button {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 10px;
+}
+
+.data_section button:hover {
+    background-color: #0056b3;
+}

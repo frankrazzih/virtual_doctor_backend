@@ -11,6 +11,7 @@
            for top-notch medical services.">
         <title>Virtual Doctor | telemedicine | health | hospital</title>
         <link rel="icon" type="image/jpeg" href="{{url_for('static', filename='images/logo.jpeg')}}">
+        <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='hosp_styles.css')}}">
         <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='styles.css')}}">
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5632460936680731"
      crossorigin="anonymous"></script>
@@ -58,23 +59,51 @@
 </div>
 
 <h2>Booking details</h2>
-  <p>Hospital: {{hosp_name}}</p>
-  <p>Doctor: {{staff_name}}</p>
-  <p>Service: {{service}}</p>
-  <p>Available: {{staff_av}}</p>
-  <p>Total cost: {{price}}</p>
-  <form action="{{url_for('user.finish_booking')}}" method="post">
-      <div class="data_section">
-          <input type="hidden" name="booking_action" value="confirm">
-          <button type="submit">Confirm booking</button>
-      </div>
-  </form>
-  <form action="{{url_for('user.finish_booking')}}" method="post">
-      <div class="data_section">
-          <input type="hidden" name="booking_action" value="cancel">
-          <button type="submit">Cancel</button>
-      </div>
-  </form>
+<div class="booking-details">
+    <p>Hospital: {{hosp_name}}</p>
+    <p>Doctor: {{staff_name}}</p>
+    <p>Service: {{service}}</p>
+    <p>Available: {{staff_av}}</p>
+    <p>Total cost: {{price}}</p>
+</div>
+
+<script>
+    function toggleTimePicker() {
+        const immediateRadio = document.getElementById('immediate');
+        const timePickerSection = document.querySelector('.time-picker-section');
+        if (immediateRadio.checked) {
+            timePickerSection.style.display = 'none';
+        } else {
+            timePickerSection.style.display = 'block';
+        }
+    }
+</script>
+
+<form action="{{ url_for('user.finish_booking') }}" method="post">
+    <div class="data_section">
+        <input type="hidden" name="booking_action" value="confirm">
+        <label>
+            <input type="radio" name="consultation_time" id="immediate" value="immediate" onclick="toggleTimePicker()" checked>
+            Immediate
+        </label>
+        <label>
+            <input type="radio" name="consultation_time" id="scheduled" value="scheduled" onclick="toggleTimePicker()">
+            Schedule a time
+        </label>
+        <div class="time-picker-section">
+            <label for="scheduled_time">Select Time:</label>
+            <input type="time" id="scheduled_time" name="scheduled_time">
+        </div>
+        <button type="submit">Confirm booking</button>
+    </div>
+</form>
+
+<form action="{{url_for('user.finish_booking')}}" method="post">
+    <div class="data_section">
+        <input type="hidden" name="booking_action" value="cancel">
+        <button type="submit">Cancel</button>
+    </div>
+</form>
 
 
     <footer>

@@ -157,6 +157,7 @@ class Bookings(db.Model):
     booking_uuid = db.Column(db.String(36), unique=True)
     service = db.Column(db.String(255))
     date = db.Column(db.DateTime)
+    scheduled_time = db.Column(db.Time)
     started = db.Column(db.Time)
     ended = db.Column(db.Time)
     cost = db.Column(db.Float)
