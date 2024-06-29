@@ -23,10 +23,12 @@ from .utils import (
     gen_uuid,
     send_email,
     get_cur_time,
-    clear_session_except
+    clear_session_except,
+    redis_client
     )
 from .meeting_routes import create_room
-from sqlalchemy.orm import join
+import json
+from urllib.parse import quote
 #create a blueprint
 user_bp = Blueprint('user', __name__)
 
@@ -98,10 +100,11 @@ def sign_in():
         correct_pwd = check_pwd(password, hashed_pwd)
         
         if correct_pwd:
-            # Store user id in the session
+            # Store user details in the session
             session['user_uuid'] = user.user_uuid
             session['user_id'] = user.user_id
-            
+            session['email'] = user.email
+            session['user_name'] = user.first_name + user.last_name
             # Check if user has a booking id to resume booking
             if session.get('booking_uuid') is not None:
                 return redirect(url_for('user.finish_booking'))
@@ -178,6 +181,7 @@ def booking():
             staff_id = av_staff.staff_id
             staff_name = av_staff.staff_name
             staff_uuid = av_staff.staff_uuid
+            staff_email = av_staff.email
         else:
             flash('No doctor is currently available. Please try another hospital.')
             return redirect(url_for('user.booking'))
@@ -192,6 +196,7 @@ def booking():
         session['staff_id'] = staff_id
         session['staff_avail_time'] = staff_avail_time
         session['staff_uuid'] = staff_uuid
+        session['staff_email'] = staff_email
         #check if user is logged in
         if 'user_uuid' in session:
             return redirect(url_for('user.finish_booking'))
@@ -217,9 +222,11 @@ def finish_booking():
         if sch_time == 'immediate':
             #create the meeting immediately
             time = None
+            time_link = sch_time
         else:
             #schedule the meeting to start at the specified time
             time = request.form.get('scheduled_time')
+            time_link = time
         if action == 'cancel':
             #remove booking details from the session
             clear_session_except(session, 'user_id', 'user_uuid')
@@ -227,8 +234,9 @@ def finish_booking():
             return redirect(url_for('user.home'))
         elif action == 'confirm':
             #store booking details in the booking table
+            booking_uuid = session.get('booking_uuid')
             new_booking = Bookings(
-                booking_uuid = session.get('booking_uuid'),
+                booking_uuid = booking_uuid,
                 service = session.get('service'),
                 date = get_cur_time(),
                 scheduled_time = time,
@@ -241,21 +249,50 @@ def finish_booking():
             try:
                 db.session.add(new_booking)
                 db.session.commit()
-                #send email to hosp and user notifying them of the booking
-                #call create meeting to get room id
-                #create link to meeting with the room id and user id
-                #the links takes user to meeting route
-                #check if user has room id and user id
-                #if true, direct them to the meeting page
-                #clear the session
                 room_id = create_room()
-                user_url = f'http://127.0.0.1:5000/meeting?user_id={session["user_uuid"]}&meeting_id={room_id}'
-                staff_url = f'http://127.0.0.1:5000/meeting?user_id={session["staff_uuid"]}&meeting_id={room_id}'
+                #store the meeting details in redis
+                try:
+                    room_data = json.dumps({
+                            'booking_uuid': booking_uuid,
+                            'staff_uuid': session['staff_uuid'],
+                            'user_uuid': session['user_uuid']
+                        })
+                    redis_client.hset('pending_meetings', room_id, room_data)
+                except Exception as error:
+                    print(f'redis error: {error}')
+                #create meeting links
+                link = 'https://5856-154-152-3-1.ngrok-free.app'
+                user_id = quote(session["user_uuid"])
+                staff_id = quote(session["staff_uuid"])
+                room_id_encoded = quote(str(room_id))
+                time_link_encoded = quote(time_link)
 
-                clear_session_except(session, 'user_id', 'user_uuid')
+                user_url = f'{link}/meeting?user_id={user_id}&meeting_id={room_id_encoded}&start_time={time_link_encoded}'
+                staff_url = f'{link}/meeting?user_id={staff_id}&meeting_id={room_id_encoded}&start_time={time_link_encoded}'
+                #send booking confrimation and meeting links
+                #user email
+                subject = 'VIRTUAL DOCTOR BOOKING CONFIRMATION'
+                recipients = [session['email']]
+                body = f'You appointment with doctor {session["staff_name"]}\n\
+                    Start time: {sch_time}\n\
+                    Meeting link: {user_url}\n\
+                    Please keep time.'
+                send_email(subject, recipients, body)
+                #staff email
+                subject = 'VIRTUAL DOCTOR APPOINTMENT NOTIFICATION'
+                recipients = [session['staff_email']]
+                body = f'You have been been booked for a consultation with {session["user_name"]}\n\
+                    Start time: {sch_time}\n\
+                    Meeting link: {staff_url}\n\
+                    Please keep time.'
+                send_email(subject, recipients, body)
+                #display joining links on respective portals
+                redis_client.set('staff_meeting_link', staff_url)
                 flash('Booking was successful!')
                 return render_template('/private/user_portal/user_home.html', url=user_url)
-            except:
+            except Exception as error:
+                print('Error: ', error)
+                db.session.rollback()
                 flash('Booking failed! Try again.')
                 return redirect(url_for('user.booking'))
 

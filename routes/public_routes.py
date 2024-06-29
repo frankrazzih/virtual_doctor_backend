@@ -25,7 +25,10 @@ def sign_in():
     """
     portal = request.args.get('portal')
     if not portal:
-        return render_template('/public/select_portal.html')    
+        return render_template('/public/select_portal.html')
+    if portal == 'staff':
+        return render_template('/public/sign_in.html', 
+                        sign_in=url_for(f'{portal}.sign_in')) 
     return render_template('/public/sign_in.html', 
                         sign_in=url_for(f'{portal}.sign_in'),
                         register=url_for(f'{portal}.register'))

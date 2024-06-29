@@ -70,6 +70,7 @@ class Staff(db.Model):
     contact = db.Column(db.String(30), unique=True)
     service = db.Column(db.String(255))
     availability = db.Column(db.Boolean, default=True)
+    password = db.Column(db.String(255))
     
     # fk to hospitals
     hosp_id = db.Column(db.Integer, db.ForeignKey('hospitals.hosp_id'))

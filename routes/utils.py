@@ -5,8 +5,11 @@ from flask_mail import Mail, Message
 import importlib
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
+import redis
 
 executor = ThreadPoolExecutor() #to create a separate thread to send the email
+#set redis client
+redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 
 #async email function
 def send_async_mail(app, msg: Mail):
@@ -50,7 +53,7 @@ def get_cur_time():
     return datetime.now()
 
 #clear session keys except the one needed
-def clear_session_except(session, key1, key2):
-    keys_to_remove = [key for key in session.keys() if (key != key1 and key != key2)]
+def clear_session_except(session, key1, key2, key3):
+    keys_to_remove = [key for key in session.keys() if (key != key1 and key != key2 and key != key3)]
     for key in keys_to_remove:
         session.pop(key, None)

@@ -23,6 +23,7 @@ from .utils import (
     send_email,
     get_cur_time
     )
+import random
 #create a blueprint
 hospital_bp = Blueprint('hospital', __name__)
 
@@ -53,17 +54,12 @@ def register():
             db.session.add(new_hosp)
             db.session.commit()
             # #send an email to the hospital confirming registration
-            # mail = create_mail_object()
-            # msg = Message('VIRTUAL DOCTOR REGISTRATION', sender='naismart@franksolutions.tech', recipients=[email])
-            # msg.body = 'Thank You for registering with us!\nYour health matters to us'
-            # mail.send(msg)
-            # '''
-            # #send an email to the admin informing of a new user
-            # users = session.query(Customers).filter_by(email=email).first()
-            # msg = Message('New user', sender='naismart@franksolutions.tech', recipients=['francischege602@gmail.com'])
-            # msg.body = f'{users.first_name} {users.last_name}\n\n\n'
-            # mail.send(msg)
-            # '''
+            subject = 'VIRTUAL DOCTOR HOSPITAL REGISTRATION'
+            recipients = [email]
+            body = f'Thank you for registering with Virtual Doctor.\n\
+                Please login to your portal and proceed to register your healthcare personel and the services you offer to start offering your services on the platform\n\
+                Welcome to Virtual Doctor!'
+            send_email(subject, recipients, body)
             flash('Registration was successful')
             return redirect(url_for('public.sign_in', portal='hospital'))
         #errors arising due to unique constraint violation
@@ -93,6 +89,7 @@ def sign_in():
     if correct_pwd:
         session['hosp_id'] = hosp.hosp_id
         session['hosp_uuid'] = hosp.hosp_uuid
+        session['hosp_name'] = hosp.hosp_name
         return redirect(url_for('hospital.home'))
     else:
         flash('Wrong password!. Please try again.')
@@ -115,6 +112,7 @@ def home():
 @hospital_bp.route('/staff', methods=['POST'])
 def staff():
     '''register the hospitals staff'''
+    hosp_name = session['hosp_name']
     counter = 1
     while True:
         staff_name = request.form.get(f'staff{counter}')
@@ -126,19 +124,28 @@ def staff():
         if staff_name is None or service is None or contact is None or email is None:
             flash('Staff upload was successful!')
             return redirect(url_for('hospital.home'))
+        password = random.randint(00000,99999)
+        hashed_pwd = hash_pwd(str(password))
         new_staff = Staff(
             staff_uuid = gen_uuid(),
             staff_name = staff_name,
             email = email,
             contact = contact,
             service = service,
-            hosp_id = session['hosp_id']
+            hosp_id = session['hosp_id'],
+            password = hashed_pwd
         )
         try:
             db.session.add(new_staff)
             db.session.commit()
-        except Exception as error:
-            print(error)
+            subject = 'VIRTUAL DOCTOR HEALTHCARE PRACTIONER REGISTRATION'
+            recipients = [email]
+            body = f'You have been registered as a healthcare practioner for {hosp_name} to provide {service} services\n\
+                You can now log into your staff portal using the registered email and this one time password: {password}\n\
+                Change your password after login.\n\
+                Welcome to Virtual Doctor!'
+            send_email(subject, recipients, body)
+        except:
             flash('An error occured please try again!')
             return redirect(url_for('hospital.home'))
 
