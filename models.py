@@ -138,8 +138,8 @@ class Prescriptions(db.Model):
     presc_id = db.Column(db.Integer, primary_key=True, unique=True)
     presc_uuid = db.Column(db.String(36), unique=True)  # Updated to String
     date_issued = db.Column(db.DateTime)
-    diagnosis = db.Column(db.String(255))
-    prescription = db.Column(db.String(255))
+    diagnosis = db.Column(db.String(2550))
+    prescription = db.Column(db.String(2550))
     staff_id = db.Column(db.Integer)
     hosp_id = db.Column(db.Integer)
     fully_filled = db.Column(db.Boolean)
@@ -162,7 +162,7 @@ class Bookings(db.Model):
     started = db.Column(db.Time)
     ended = db.Column(db.Time)
     cost = db.Column(db.Float)
-    complete = db.Column(db.Boolean)
+    complete = db.Column(db.Boolean, default=False)
     
     # fk
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))

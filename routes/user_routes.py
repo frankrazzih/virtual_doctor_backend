@@ -28,7 +28,8 @@ from .utils import (
     )
 from .meeting_routes import create_room
 import json
-from urllib.parse import quote
+from os import getenv
+import jwt
 #create a blueprint
 user_bp = Blueprint('user', __name__)
 
@@ -241,7 +242,6 @@ def finish_booking():
                 date = get_cur_time(),
                 scheduled_time = time,
                 cost = session.get('price'),
-                complete = False,
                 user_id = session.get('user_id'),
                 hosp_id = session.get('hosp_id'),
                 staff_id = session.get('staff_id')
@@ -252,23 +252,25 @@ def finish_booking():
                 room_id = create_room()
                 #store the meeting details in redis
                 try:
-                    room_data = json.dumps({
+                    room_data = {
                             'booking_uuid': booking_uuid,
                             'staff_uuid': session['staff_uuid'],
                             'user_uuid': session['user_uuid']
-                        })
-                    redis_client.hset('pending_meetings', room_id, room_data)
+                        }
+                    redis_client.hset('pending_meetings', room_id, json.dumps(room_data))
                 except Exception as error:
                     print(f'redis error: {error}')
                 #create meeting links
-                link = 'https://5856-154-152-3-1.ngrok-free.app'
-                user_id = quote(session["user_uuid"])
-                staff_id = quote(session["staff_uuid"])
-                room_id_encoded = quote(str(room_id))
-                time_link_encoded = quote(time_link)
-
-                user_url = f'{link}/meeting?user_id={user_id}&meeting_id={room_id_encoded}&start_time={time_link_encoded}'
-                staff_url = f'{link}/meeting?user_id={staff_id}&meeting_id={room_id_encoded}&start_time={time_link_encoded}'
+                link = getenv('LINK')
+                payload = {
+                    'meeting_id': room_id,
+                    'start_time': time_link,
+                    'owner': 'patient'
+                }
+                make_token = lambda payload: jwt.encode(payload, getenv('APP_KEY'), algorithm='HS256')
+                #create a secure token with the payload
+                token = make_token(payload)
+                user_url = f'{link}/meeting?token={token}'
                 #send booking confrimation and meeting links
                 #user email
                 subject = 'VIRTUAL DOCTOR BOOKING CONFIRMATION'
@@ -279,6 +281,13 @@ def finish_booking():
                     Please keep time.'
                 send_email(subject, recipients, body)
                 #staff email
+                payload = {
+                    'meeting_id': room_id,
+                    'start_time': time_link,
+                    'owner': 'staff'
+                }
+                token = make_token(payload)
+                staff_url = f'{link}/meeting?token={token}'
                 subject = 'VIRTUAL DOCTOR APPOINTMENT NOTIFICATION'
                 recipients = [session['staff_email']]
                 body = f'You have been been booked for a consultation with {session["user_name"]}\n\
@@ -287,7 +296,9 @@ def finish_booking():
                     Please keep time.'
                 send_email(subject, recipients, body)
                 #display joining links on respective portals
-                redis_client.set('staff_meeting_link', staff_url)
+                redis_client.set('staff_meeting_link', user_url)
+                #remove booking details from the session
+                clear_session_except(session, 'user_id', 'user_uuid', 'email')
                 flash('Booking was successful!')
                 return render_template('/private/user_portal/user_home.html', url=user_url)
             except Exception as error:

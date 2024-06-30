@@ -14,11 +14,11 @@
     const meeting = new VideoSDKMeeting();
 
         meeting.init({
-        name: "Test meeting",
+        name: "Virtual Consultation",
         apiKey: '{{api_key}}', // generated from app.videosdk.live
         meetingId: '{{meeting_id}}', // enter your meeting id
         
-        redirectOnLeave: "http://127.0.0.1:5000/public/",
+        redirectOnLeave: '{{ret_url}}',
       
         micEnabled: true,
         webcamEnabled: true,
@@ -54,7 +54,7 @@
         branding: {
           enabled: true,
           logoURL:
-            "https://static.zujonow.com/videosdk.live/videosdk_logo_circle_big.png",
+            "{{url_for('static', filename='images/logo.jpeg')}}",
           name: "Prebuilt",
           poweredBy: false,
         },
@@ -80,24 +80,15 @@
       
         joinScreen: {
           visible: true, // Show the join screen ?
-          title: "Daily scrum", // Meeting title
+          title: "Virtual Consultation", // Meeting title
           meetingUrl: window.location.href, // Meeting joining url
-        },
-      
-        leftScreen: {
-          // visible when redirect on leave not provieded
-          actionButton: {
-            // optional action button
-            label: "Video SDK Live", // action button label
-            href: "https://videosdk.live/", // action button href
-          },
         },
       
         notificationSoundEnabled: true,
       
         debug: true, // pop up error during invalid config or netwrok error
       
-        maxResolution: "sd", // "hd" or "sd"
+        maxResolution: "hd", // "hd" or "sd"
       });
 </script>
 
