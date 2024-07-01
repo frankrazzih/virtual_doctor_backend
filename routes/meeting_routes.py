@@ -123,6 +123,7 @@ def meeting():
         flash(str(error))
         return redirect(url_for('public.home'))
     user_uuid = meeting_info.get('user_uuid')
+    user_id = meeting_info.get('user_id')
     staff_uuid = meeting_info.get('staff_uuid')
     booking_uuid = meeting_info.get('booking_uuid')
     #add meeting to active meetings
@@ -130,6 +131,7 @@ def meeting():
                 'booking_uuid': booking_uuid,
                 'staff_uuid': staff_uuid,
                 'user_uuid': user_uuid,
+                'user_id': user_id,
                 'start_time': str(get_cur_time().time())
             })
     redis_client.hset('active_meetings', meeting_id, meeting_info)
@@ -179,6 +181,7 @@ def finished():
     #check if meeting_id is in active meetings
     meeting_info = get_meeting_info('active_meetings', meeting_id)
     user_uuid = meeting_info.get('user_uuid')
+    user_id = meeting_info.get('user_id')
     staff_uuid = meeting_info.get('staff_uuid')
     booking_uuid = meeting_info.get('booking_uuid')
     start_time = meeting_info.get('start_time')
@@ -201,14 +204,19 @@ def finished():
     else:
         fin_patient_access = True
     if fin_staff_access is True and fin_patient_access is True:
-        redis_client.hdel('active_meetings', meeting_id)
-    #issue prescription and consultation report
+        redis_client.hdel('active_meetings', meeting_id) 
+    #save relevant details to track prescription
+    presc_uuid = gen_uuid()
     if owner == 'staff':
+        #issue prescription and consultation report
+        session['pending_presc'] = {
+            'user_uuid': user_uuid,
+            'user_id': user_id,
+            'presc_uuid': presc_uuid
+        }
         flash('Meeting is over. Log in to your portal to issue report and consultation immediately')
         return redirect(url_for('public.sign_in', portal='staff'))
     else:
+        session['pending_presc'] = presc_uuid
         flash('Meeting is over. Please login to your portal to receive prescription and report.')
         return redirect(url_for('public.sign_in', portal='user'))
-    
-
-    

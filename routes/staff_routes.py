@@ -35,7 +35,13 @@ staff_bp = Blueprint('staff', __name__)
 def home():
     '''route for staff homepage operations'''
     if request.method == 'GET':
-        return render_template('/private/staff_portal/staff_home.html', url=(redis_client.get('staff_url').encode('UTF-8')))
+        #get meeting link
+        url= None
+        try:
+            url=(redis_client.get('staff_url').encode('UTF-8'))
+        except Exception as error:
+            print(error)
+        return render_template('/private/staff_portal/staff_home.html', url=url)
     else:
         pass
 @staff_bp.route('/sign_in', methods=['POST'])
@@ -54,8 +60,23 @@ def sign_in():
         session['staff_id'] = staff.hosp_id
         session['staff_uuid'] = staff.staff_uuid
         session['staff_name'] = staff.staff_name
-        flash('You have successfully logged in')
-        return render_template('/private/staff_portal/staff_home.html', name=staff.staff_name)
+        session['hosp_id'] = staff.hosp_id
+        #check if the staff has a prescription to issue from a completed meeting
+        make_presc = False
+        if 'pending_presc' in session:
+            #make the form appear in the staff portal
+            make_presc = True
+            flash('Please issue the prescription and report immediately')
+        else:
+            flash('You have successfully logged in')
+        return render_template('/private/staff_portal/staff_home.html', name=staff.staff_name, make_presc=make_presc)
     else:
         flash('Wrong password!. Please try again.')
         return redirect(url_for('public.sign_in', portal='staff'))
+
+#logout
+@staff_bp.route('/logout', methods=['GET'])
+def logout():
+    '''logout a staff'''
+    session.clear()
+    return redirect(url_for('public.home'))

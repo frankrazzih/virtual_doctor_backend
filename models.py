@@ -138,11 +138,11 @@ class Prescriptions(db.Model):
     presc_id = db.Column(db.Integer, primary_key=True, unique=True)
     presc_uuid = db.Column(db.String(36), unique=True)  # Updated to String
     date_issued = db.Column(db.DateTime)
-    diagnosis = db.Column(db.String(2550))
+    report = db.Column(db.String(2550))
     prescription = db.Column(db.String(2550))
     staff_id = db.Column(db.Integer)
     hosp_id = db.Column(db.Integer)
-    fully_filled = db.Column(db.Boolean)
+    status = db.Column(db.String(25))
     
     # fk to users
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
@@ -205,11 +205,11 @@ class Revenue(db.Model):
     gross_income = db.Column(db.Float)
     net_income = db.Column(db.Float)
     vd_profit = db.Column(db.Float)
-    
+
     # fk
     pharm_id = db.Column(db.Integer, db.ForeignKey('pharmacy.pharm_id'))
     hosp_id = db.Column(db.Integer, db.ForeignKey('hospitals.hosp_id'))
-    
+
     # relationships
     payment = relationship('Payments', back_populates='revenues')
     pharmacy = relationship('Pharmacy', back_populates='revenues')

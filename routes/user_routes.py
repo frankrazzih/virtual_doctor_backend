@@ -15,7 +15,8 @@ from models import (
     Hospitals,
     Staff,
     Bookings,
-    Services
+    Services,
+    Prescriptions
     )
 from .utils import (
     hash_pwd,
@@ -131,9 +132,12 @@ def logout():
 def home():
     '''user homepage'''
     if 'user_uuid' in session:
+        # #check if user has a pending prescription
+        # if session.get('pending_presc') == session['user_uuid']:
+        #     presc = 
         return render_template('/private/user_portal/user_home.html')
     else:
-        return redirect(url_for('public.home'))
+        return redirect(url_for('public.sign', portal='user'))
 
 #booking
 @user_bp.route('/booking', methods=['POST', 'GET'])
@@ -255,7 +259,8 @@ def finish_booking():
                     room_data = {
                             'booking_uuid': booking_uuid,
                             'staff_uuid': session['staff_uuid'],
-                            'user_uuid': session['user_uuid']
+                            'user_uuid': session['user_uuid'],
+                            'user_id': session['user_id']
                         }
                     redis_client.hset('pending_meetings', room_id, json.dumps(room_data))
                 except Exception as error:
@@ -307,3 +312,54 @@ def finish_booking():
                 flash('Booking failed! Try again.')
                 return redirect(url_for('user.booking'))
 
+@user_bp.route('/presc', methods=['GET', 'POST'])
+def presc():
+    '''manage the users prescriptions'''
+    #store prescriptions issued by staff
+    if request.method == 'POST':
+        #retrieve and save the prescription issued to redis and database
+        counter = 1
+        report = request.form.get('report')
+        med_entries = [] #list of medicine entries
+        while True:
+            med_name = request.form.get(f'med_name{counter}')
+            dosage = request.form.get(f'dosage{counter}')
+            inst = request.form.get(f'inst{counter}')
+            counter += 1
+            #check if all info has been retrieved
+            if not med_name:
+                break
+            med_entries.append({
+                'med_name': med_name,
+                'dosage': dosage,
+                'inst': inst
+            })
+        presc = {
+            'report': report,
+            'prescriptions': med_entries
+        }
+        pending_presc = session['pending_presc']
+        presc_uuid = pending_presc['presc_uuid']
+        user_uuid = pending_presc['user_uuid']
+        try:
+            #store in redis
+            redis_client.hset('active_presc', user_uuid, json.dumps(presc))
+            #store to db
+            new_presc = Prescriptions(
+                presc_uuid = presc_uuid,
+                date_issued = get_cur_time(),
+                report = report,
+                prescription = med_entries,
+                staff_id = session['staff_id'],
+                hosp_id = session['hosp_id'],
+                status = 'incomplete',
+                user_id = session['user_id']
+            )
+            db.session.add(new_presc)
+            db.session.commit()
+        except Exception as error:
+            print(error)
+        #clear pending prescription from the session
+        del session['pending_presc']
+        flash('Prescription and report were issued successfully')
+        return redirect(url_for('staff.home'))
