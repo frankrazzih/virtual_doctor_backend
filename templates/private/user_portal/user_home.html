@@ -14,6 +14,11 @@
         <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='styles.css')}}">
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5632460936680731"
      crossorigin="anonymous"></script>
+     <style>
+      .presc_cont ul{
+        display: flex;
+      }
+     </style>
     </head>
     <body>
 <!-- Navigation Bar -->
@@ -95,6 +100,36 @@
     </div>
     <a href="{{url}}">Access meetings here</a>
     <br>
+    <!--get recenty issued prescription-->
+    {% if get_presc %}
+    <a href="{{url_for('user.presc')}}">
+      <button>Get prescription and medical report</button>
+    </a>
+    {% endif %}
+
+    {% if presc %}
+    <div class="presc_cont">
+      <h2>Report</h2>
+      <p>{{ presc['report'] }}</p>
+      <!--get the prscription-->
+      <h2>Prescription</h2>
+      <ul>
+        <li>medicine</li>
+        <li>dosage</li>
+        <li>instructions</li>
+      </ul>
+      {% for med_entry in presc['prescriptions'] %}
+        <ul>
+          <li>med_entry['med_name']</li>
+          <li>med_entry['dosage']</li>
+          <li>med_entry['inst']</li>
+        </ul>
+      {% endfor %}
+      <a href="{{url_for('user.pharm')}}">
+        <button>Proceed to pharmacy</button>
+      </a>
+    </div>
+    {% endif %}
 
     <footer>
         <section>

@@ -110,9 +110,15 @@ def sign_in():
             # Check if user has a booking id to resume booking
             if session.get('booking_uuid') is not None:
                 return redirect(url_for('user.finish_booking'))
-            
-            flash(f'Successfully logged in as {user.first_name} {user.last_name}')
-            return redirect(url_for('user.home'))
+            #check if user has an active prescription
+            get_presc = False
+            if 'pending_presc' in session:
+                get_presc = True
+                flash('Your prescription is being prepared by your doctor.\n\
+                      It will be available in a few minutes')
+            else:
+                flash(f'Successfully logged in as {user.first_name} {user.last_name}')
+            return render_template('/private/user_portal/user_home.html', get_presc=get_presc)
         else:
             flash('Wrong password! Please try again.')
             return redirect(url_for('public.sign_in', portal='user'))
@@ -190,8 +196,8 @@ def booking():
         else:
             flash('No doctor is currently available. Please try another hospital.')
             return redirect(url_for('user.booking'))
-        booking_uuid = gen_uuid() #track unlogged in users
-        session['booking_uuid'] = booking_uuid
+        #track unlogged in users
+        session['booking_uuid'] = gen_uuid()
         #store all details in the session
         session['service'] = service
         session['hosp_name'] = hosp_name
@@ -234,7 +240,7 @@ def finish_booking():
             time_link = time
         if action == 'cancel':
             #remove booking details from the session
-            clear_session_except(session, 'user_id', 'user_uuid')
+            clear_session_except(session, 'user_id', 'user_uuid', 'email')
             flash('You have cancelled your booking!')
             return redirect(url_for('user.home'))
         elif action == 'confirm':
@@ -363,3 +369,20 @@ def presc():
         del session['pending_presc']
         flash('Prescription and report were issued successfully')
         return redirect(url_for('staff.home'))
+    else:
+        #retrieve prescriptions for the user
+        try:
+            presc = redis_client.hget('active_presc', session['user_uuid'])
+            if not presc:
+                flash('Prescription is being prepared. Please try again after a few minutes')
+                return render_template('/private/user_portal/user_home.html', get_presc=True)        
+        except Exception as error:
+            print(f'redis error: {error}')
+        presc = json.loads(presc.decode('UTF-8'))
+        return render_template('/private/user_portal/user_home.html', presc=presc)
+    
+@user_bp.route('/pharmacy', methods=['GET'])
+def pharm():
+    '''purchase medicine from the pharmacy'''
+    flash('coming soon!')
+    return redirect(request.referrer)

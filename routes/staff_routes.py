@@ -65,7 +65,7 @@ def sign_in():
         make_presc = False
         if 'pending_presc' in session:
             #make the form appear in the staff portal
-            make_presc = True
+            make_presc = False
             flash('Please issue the prescription and report immediately')
         else:
             flash('You have successfully logged in')
