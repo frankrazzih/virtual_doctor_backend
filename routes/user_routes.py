@@ -230,6 +230,7 @@ def finish_booking():
         #complete booking
         action = request.form.get('booking_action')
         sch_time = request.form.get('consultation_time')
+        session_keys_to_keep = ['user_id', 'user_uuid', 'email', 'user_name']
         if sch_time == 'immediate':
             #create the meeting immediately
             time = None
@@ -240,7 +241,7 @@ def finish_booking():
             time_link = time
         if action == 'cancel':
             #remove booking details from the session
-            clear_session_except(session, 'user_id', 'user_uuid', 'email')
+            clear_session_except(session, session_keys_to_keep)
             flash('You have cancelled your booking!')
             return redirect(url_for('user.home'))
         elif action == 'confirm':
@@ -307,9 +308,9 @@ def finish_booking():
                     Please keep time.'
                 send_email(subject, recipients, body)
                 #display joining links on respective portals
-                redis_client.set('staff_meeting_link', user_url)
+                redis_client.set('staff_url', staff_url)
                 #remove booking details from the session
-                clear_session_except(session, 'user_id', 'user_uuid', 'email')
+                clear_session_except(session, session_keys_to_keep)
                 flash('Booking was successful!')
                 return render_template('/private/user_portal/user_home.html', url=user_url)
             except Exception as error:
@@ -323,6 +324,10 @@ def presc():
     '''manage the users prescriptions'''
     #store prescriptions issued by staff
     if request.method == 'POST':
+        #check if doctor has pending presc
+        if 'pending_presc' not in session:
+            flash('No pending prescriptions to issue')
+            return redirect(request.referrer)
         #retrieve and save the prescription issued to redis and database
         counter = 1
         report = request.form.get('report')
@@ -346,10 +351,9 @@ def presc():
         }
         pending_presc = session['pending_presc']
         presc_uuid = pending_presc['presc_uuid']
-        user_uuid = pending_presc['user_uuid']
         try:
             #store in redis
-            redis_client.hset('active_presc', user_uuid, json.dumps(presc))
+            redis_client.setex(presc_uuid, 600 ,json.dumps(presc))
             #store to db
             new_presc = Prescriptions(
                 presc_uuid = presc_uuid,
@@ -371,10 +375,11 @@ def presc():
         return redirect(url_for('staff.home'))
     else:
         #retrieve prescriptions for the user
+        presc = None
         try:
-            presc = redis_client.hget('active_presc', session['user_uuid'])
+            presc = redis_client.get(session['presc_uuid'])
             if not presc:
-                flash('Prescription is being prepared. Please try again after a few minutes')
+                flash('Prescription is not available. Please try again after a few minutes')
                 return render_template('/private/user_portal/user_home.html', get_presc=True)        
         except Exception as error:
             print(f'redis error: {error}')

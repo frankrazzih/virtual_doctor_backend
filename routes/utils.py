@@ -53,7 +53,7 @@ def get_cur_time():
     return datetime.now()
 
 #clear session keys except the one needed
-def clear_session_except(session, key1, key2, key3):
-    keys_to_remove = [key for key in session.keys() if (key != key1 and key != key2 and key != key3)]
+def clear_session_except(session: dict, keys: list)->None:
+    keys_to_remove = [key for key in session.keys() if (key not in keys)]
     for key in keys_to_remove:
         session.pop(key, None)

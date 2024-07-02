@@ -36,9 +36,9 @@ def home():
     '''route for staff homepage operations'''
     if request.method == 'GET':
         #get meeting link
-        url= None
+        url = None
         try:
-            url=(redis_client.get('staff_url').encode('UTF-8'))
+            url=(redis_client.get('staff_url').decode('UTF-8'))
         except Exception as error:
             print(error)
         return render_template('/private/staff_portal/staff_home.html', url=url)
@@ -65,7 +65,7 @@ def sign_in():
         make_presc = False
         if 'pending_presc' in session:
             #make the form appear in the staff portal
-            make_presc = False
+            make_presc = True
             flash('Please issue the prescription and report immediately')
         else:
             flash('You have successfully logged in')

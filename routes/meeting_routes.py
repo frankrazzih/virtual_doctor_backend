@@ -54,13 +54,13 @@ def create_room():
     url = "https://api.videosdk.live/v2/rooms"
     token = gen_token()
     headers = {'Authorization' : token,'Content-Type' : 'application/json'}
+    room_id = None
     try:
         response = requests.post(url, json={}, headers=headers)
+        response = response.json()
+        room_id = response.get('roomId')
     except Exception as error:
         print(error)
-        exit
-    response = response.json()
-    room_id = response.get('roomId')
     return room_id
 
 class MeetingNotFoundError(Exception):
@@ -100,7 +100,7 @@ def meeting():
     try:
         payload = get_payload(token)
         start_time = payload['start_time']
-        meeting_id = payload['meeting_id']
+        meeting_id = str(payload['meeting_id'])
         owner = payload['owner']
     except TokenNotFoundError as error:
         flash(str(error))
@@ -111,7 +111,7 @@ def meeting():
     #check timing of the meeting
     if start_time != 'immediate':
         # Convert start_time to a datetime.time object
-        start_time_obj = datetime.strptime(start_time, '%H:%M').time()
+        start_time_obj = datetime.datetime.strptime(start_time, '%H:%M').time()
         if get_cur_time().time() < start_time_obj:
             #return back to the requesting page
             flash(f'Meeting has not yet started. It will start at {start_time}')
@@ -194,6 +194,7 @@ def finished():
         booking.complete = True
         db.session.commit()
     except Exception as error:
+        db.session.rollback()
         print(error)
     #remove the meeting from active meetings
     #check if both patient and staff have ended the meeting to clear it from the active meetings
@@ -204,13 +205,15 @@ def finished():
     else:
         fin_patient_access = True
     if fin_staff_access is True and fin_patient_access is True:
-        redis_client.hdel('active_meetings', meeting_id) 
+        redis_client.hdel('active_meetings', meeting_id)
+        fin_patient_access = False
+        fin_staff_access = False
+    #reset the access to allow other meetings
     #save relevant details to track prescription
     presc_uuid = gen_uuid()
     if owner == 'staff':
         #issue prescription and consultation report
         session['pending_presc'] = {
-            'user_uuid': user_uuid,
             'user_id': user_id,
             'presc_uuid': presc_uuid
         }

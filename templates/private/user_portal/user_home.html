@@ -18,6 +18,11 @@
       .presc_cont ul{
         display: flex;
       }
+      .presc_cont li{
+        padding: 1rem;
+        border: solid black;
+        border-width: 1px;
+      }
      </style>
     </head>
     <body>
@@ -120,9 +125,9 @@
       </ul>
       {% for med_entry in presc['prescriptions'] %}
         <ul>
-          <li>med_entry['med_name']</li>
-          <li>med_entry['dosage']</li>
-          <li>med_entry['inst']</li>
+          <li>{{med_entry['med_name']}}</li>
+          <li>{{med_entry['dosage']}}</li>
+          <li>{{med_entry['inst']}}</li>
         </ul>
       {% endfor %}
       <a href="{{url_for('user.pharm')}}">

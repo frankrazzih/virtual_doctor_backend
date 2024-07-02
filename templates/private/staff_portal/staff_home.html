@@ -75,12 +75,7 @@
 <br>
 
 <!--Toggle the visibility of the consulatation report form-->
-<!-- {% if make_presc %}
-<script>
-  document.getElementsByClassName('form-container')[0].style.display = 'none';
-</script>
-{% endif %} -->
-
+{% if make_presc %}
 <div class="form-container">
   <h1>Consultation and Prescription</h1>
   <form action="{{url_for('user.presc')}}" method="post" id="consultation-form">
@@ -92,6 +87,7 @@
       <button type="submit" class="submit-button">Submit</button>
   </form>
 </div>
+{% endif %}
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
