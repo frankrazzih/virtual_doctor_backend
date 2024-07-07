@@ -1,6 +1,7 @@
 '''routes for user operations'''
 
 from flask import (
+    current_app,
     Blueprint, 
     render_template, 
     request,
@@ -64,18 +65,12 @@ def register():
         try:
             db.session.add(new_user)
             db.session.commit()
+            current_app.logger.info('User registration successful')
             #send an email to the user confirming registration
             subject = 'VIRTUAL DOCTOR REGISTRATION'
             recipients = [email]
             body = 'Thank You for registering with Virtual Doctor!\nQuality healthcare anywhere, anytime.'
             send_email(subject, recipients, body)
-            # '''
-            # #send an email to the admin informing of a new user
-            # users = session.query(Customers).filter_by(email=email).first()
-            # msg = Message('New user', sender='naismart@franksolutions.tech', recipients=['francischege602@gmail.com'])
-            # msg.body = f'{users.first_name} {users.last_name}\n\n\n'
-            # mail.send(msg)
-            # '''
             flash('Registration was successful')
             return redirect(url_for('public.sign_in', portal='user'))
         #errors arising due to unique constraint violation

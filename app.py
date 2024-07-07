@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import os
 from flask_migrate import Migrate
 from flask_mail import Mail
+from log_conf import logger
 
 def create_app():
     '''configure the app from different modules'''
@@ -16,6 +17,10 @@ def create_app():
     
     app.secret_key = os.getenv('APP_KEY')
     
+    #setup logging
+    app.logger = logger
+    app.logger.info('Logging setup successfully')
+
     #configure the db
     db_pwd = os.getenv('DB_PASSWORD')
     db_user = os.getenv('DB_USER')

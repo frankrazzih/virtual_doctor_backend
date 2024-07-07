@@ -6,15 +6,16 @@ from flask import (
     request, 
     url_for,
     flash)
+from flask import current_app
 from werkzeug.security import (generate_password_hash, 
                                check_password_hash)
 #create public blueprint
 public_bp = Blueprint('public', __name__)
-
 #renders home page
 @public_bp.route('/', methods=['GET'])
 def home():
     '''returns the public homepage'''
+    current_app.logger.info('Homepage accessed')
     return render_template('/public/index.html')
 
 #sign_in endpoint
