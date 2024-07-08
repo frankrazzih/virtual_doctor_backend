@@ -1,6 +1,8 @@
 '''routes for pharmacy operations'''
 
 from flask import (
+    current_app,
+    session,
     Blueprint, 
     render_template, 
     request,
@@ -12,6 +14,8 @@ from flask_mail import Message
 from models import (
     db,
     Pharmacy,
+    Stock,
+    Medicine
     )
 from .utils import (
     hash_pwd,
@@ -20,6 +24,8 @@ from .utils import (
     send_email,
     get_cur_time
     )
+from sqlalchemy import or_
+
 #create a blueprint
 pharmacy_bp = Blueprint('pharmacy', __name__)
 
@@ -49,18 +55,14 @@ def register():
         try:
             db.session.add(new_pharm)
             db.session.commit()
-            # #send an email to the user confirming registration
-            # mail = create_mail_object()
-            # msg = Message('VIRTUAL DOCTOR REGISTRATION', sender='naismart@franksolutions.tech', recipients=[email])
-            # msg.body = 'Thank You for registering with us!\nYour health matters to us'
-            # mail.send(msg)
-            # '''
-            # #send an email to the admin informing of a new user
-            # users = session.query(Customers).filter_by(email=email).first()
-            # msg = Message('New user', sender='naismart@franksolutions.tech', recipients=['francischege602@gmail.com'])
-            # msg.body = f'{users.first_name} {users.last_name}\n\n\n'
-            # mail.send(msg)
-            # '''
+            #send an email to confirm pharmacy registration
+            subject = 'Virtual Doctor Pharmacy registration'
+            recipients = [email]
+            body = 'We are pleased to inform you that your pharmacy is now registered\
+            in virtual doctor and can start providing its services.\n\
+                To continue, log in to your pharmacy portal and upload the medicine you have in stock and ready for sale.\n\
+                    Welcome to virtual doctor.'
+            send_email(subject, recipients, body)
             flash('Registration was successful')
             return redirect(url_for('public.sign_in', portal='pharmacy'))
         #errors arising due to unique constraint violation
@@ -78,16 +80,85 @@ def sign_in():
     """Checks if the entered password matches the one stored in the database for the pharmacy"""
     email = request.form['email']
     password = request.form['password']
-    hashed_pwd = db.session.query(Pharmacy.password).filter_by(email=email).first()
-    
-    if hashed_pwd is not None:
-        correct_pwd = check_pwd(password, hashed_pwd[0])
-        if correct_pwd:
-            return jsonify('Signed in successfully as pharmacy!')
-        else:
-            flash('Wrong password! Please try again.')
-            return redirect(url_for('public.sign_in', portal='pharmacy'))
-    else:
+    pharm = db.session.query(Pharmacy).filter_by(email=email).first()
+    if not pharm:
         flash('Email does not exist! Please try again.')
+        return redirect(url_for('public.sign_in', portal='pharmacy'))
+    hashed_pwd = pharm.password
+    correct_pwd = check_pwd(password, hashed_pwd)
+    if correct_pwd:
+        session['pharm_id'] = pharm.pharm_id
+        return render_template('/private/pharmacy_portal/pharmacy_home.html')
+    else:
+        flash('Wrong password! Please try again.')
+        return redirect(url_for('public.sign_in', portal='pharmacy'))
+
+#logout
+@pharmacy_bp.route('/logout', methods=['GET'])
+def logout():
+    '''logout a pharmacy'''
+    session.clear()
+    return redirect(url_for('public.home'))
+
+@pharmacy_bp.route('/meds', methods=['POST'])
+def meds():
+    '''medicine operations in the pharm portal'''
+    if request.method == 'POST':
+        counter = 1
+        while True:
+            #retrieve data from all entries
+            gen_name = request.form.get(f'gen_name{counter}')
+            brand_name = request.form.get(f'brand_name{counter}')
+            mfr  = request.form.get(f'mfr{counter}')
+            price = request.form.get(f'price{counter}')
+            quant = request.form.get(f'quant{counter}')
+            counter += 1
+            #check if all entries have beeb recorded
+            if not price:
+                break
+            #check if med exists in meds
+            med = db.session.query(Medicine).filter(or_(Medicine.gen_name == gen_name, Medicine.brand_name == brand_name)).first()
+            #add to meds table
+            if not med:
+                new_med = Medicine(
+                    gen_name = gen_name,
+                    brand_name = brand_name,
+                    meds_uuid = gen_uuid()
+                )
+                try:
+                    db.session.add(new_med)
+                    db.session.commit()
+                except Exception as err:
+                    db.session.rollback()
+                    current_app.logger.error(err, exc_info=True)
+                #get med id
+                med_id = db.session.query(Medicine.meds_id).filter(or_(Medicine.gen_name == gen_name, Medicine.brand_name == brand_name)).first()[0]
+            else:
+                med_id = med.meds_id
+            #add to stock table
+            new_stock = Stock(
+                stock_uuid = gen_uuid(),
+                price = price,
+                quant = quant,
+                mfr = mfr,
+                pharm_id = session['pharm_id'],
+                meds_id = med_id
+            )
+            try:
+                db.session.add(new_stock)
+                db.session.commit()
+            except Exception as err:
+                db.session.rollback()
+                current_app.logger.error(err, exc_info=True)
+
+        flash('Upload was successful')
+        return render_template('/private/pharmacy_portal/pharmacy_home.html')
+
+@pharmacy_bp.route('/', methods=['GET'])
+def home():
+    '''render pharmacy homepage'''
+    if 'pharm_id' in session:
+        return render_template('/private/pharmacy_portal/pharmacy_home.html')
+    else:
         return redirect(url_for('public.sign_in', portal='pharmacy'))
 

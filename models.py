@@ -57,7 +57,10 @@ class Services(db.Model):
     
     # relationships
     hospital = relationship('Hospitals', back_populates='services')
-    db.UniqueConstraint('service', 'hosp_id', name='service_hosp_unique')
+     #ensure no duplicate entries
+    __table_args__ = (
+        db.UniqueConstraint('service', 'hosp_id', name='service_hosp_unique'),
+    )
 
 # Staff
 class Staff(db.Model):
@@ -107,8 +110,8 @@ class Medicine(db.Model):
 
     meds_id = db.Column(db.Integer, primary_key=True, unique=True)
     meds_uuid = db.Column(db.String(36), unique=True)  # Updated to String
-    meds_name = db.Column(db.String(255))
-    manufacturer = db.Column(db.String(255))
+    gen_name = db.Column(db.String(255))
+    brand_name = db.Column(db.String(255))
     
     # relationships
     stock = relationship('Stock', back_populates='medicine')
@@ -120,8 +123,8 @@ class Stock(db.Model):
     stock_id = db.Column(db.Integer, primary_key=True, unique=True)
     stock_uuid = db.Column(db.String(36), unique=True)  # Updated to String
     price = db.Column(db.Float)
-    quantity = db.Column(db.Float)
-    availability = db.Column(db.String(255), nullable=True)
+    quant = db.Column(db.Float)
+    mfr = db.Column(db.String(255))
     
     # fk to pharmacy and meds
     pharm_id = db.Column(db.Integer, db.ForeignKey('pharmacy.pharm_id'))
@@ -130,6 +133,10 @@ class Stock(db.Model):
     # relationships
     pharmacy = relationship('Pharmacy', back_populates='stock')
     medicine = relationship('Medicine', back_populates='stock')
+    #ensure no duplicate entries
+    __table_args__ = (
+        db.UniqueConstraint('pharm_id', 'meds_id', name='pharm_med_unique'),
+    )
 
 # Prescriptions
 class Prescriptions(db.Model):
