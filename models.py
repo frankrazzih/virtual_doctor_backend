@@ -121,9 +121,10 @@ class Stock(db.Model):
     __tablename__ = 'stock'
 
     stock_id = db.Column(db.Integer, primary_key=True, unique=True)
-    stock_uuid = db.Column(db.String(36), unique=True)  # Updated to String
+    stock_uuid = db.Column(db.String(36), unique=True)
     price = db.Column(db.Float)
     quant = db.Column(db.Float)
+    avail = db.Column(db.Boolean, default=True)
     mfr = db.Column(db.String(255))
     
     # fk to pharmacy and meds

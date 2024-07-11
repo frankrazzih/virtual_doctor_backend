@@ -3,7 +3,7 @@ from logging.handlers import RotatingFileHandler
 
 def setup_logging():
     '''set up logging for the application'''
-    handler = RotatingFileHandler('app.log', maxBytes=10000, backupCount=3)
+    handler = RotatingFileHandler('app.log', maxBytes=50000, backupCount=5)
     handler.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s: %(pathname)s %(lineno)d')
     handler.setFormatter(formatter)

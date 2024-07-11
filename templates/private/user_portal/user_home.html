@@ -130,7 +130,7 @@
           <li>{{med_entry['inst']}}</li>
         </ul>
       {% endfor %}
-      <a href="{{url_for('user.pharm')}}">
+      <a href="{{url_for('user.pharm', presc_uuid=presc_uuid)}}">
         <button>Proceed to pharmacy</button>
       </a>
     </div>

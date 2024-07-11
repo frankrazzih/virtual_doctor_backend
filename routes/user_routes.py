@@ -17,7 +17,10 @@ from models import (
     Staff,
     Bookings,
     Services,
-    Prescriptions
+    Prescriptions,
+    Medicine,
+    Stock,
+    Pharmacy
     )
 from .utils import (
     hash_pwd,
@@ -32,6 +35,8 @@ from .meeting_routes import create_room
 import json
 from os import getenv
 import jwt
+from sqlalchemy import or_
+from sqlalchemy.sql import func, distinct
 #create a blueprint
 user_bp = Blueprint('user', __name__)
 
@@ -347,7 +352,7 @@ def presc():
         pending_presc = session['pending_presc']
         presc_uuid = pending_presc['presc_uuid']
         try:
-            #store in redis
+            #store in redis temporarily
             redis_client.setex(presc_uuid, 600 ,json.dumps(presc))
             #store to db
             new_presc = Prescriptions(
@@ -358,12 +363,12 @@ def presc():
                 staff_id = session['staff_id'],
                 hosp_id = session['hosp_id'],
                 status = 'incomplete',
-                user_id = session['user_id']
+                user_id = pending_presc['user_id']
             )
             db.session.add(new_presc)
             db.session.commit()
         except Exception as error:
-            print(error)
+            current_app.logger.error(error, exc_info=True)
         #clear pending prescription from the session
         del session['pending_presc']
         flash('Prescription and report were issued successfully')
@@ -371,18 +376,100 @@ def presc():
     else:
         #retrieve prescriptions for the user
         presc = None
+        presc_uuid = session['presc_uuid']
         try:
             presc = redis_client.get(session['presc_uuid'])
             if not presc:
                 flash('Prescription is not available. Please try again after a few minutes')
                 return render_template('/private/user_portal/user_home.html', get_presc=True)        
         except Exception as error:
-            print(f'redis error: {error}')
+            current_app.logger.error(error, exc_info=True)
         presc = json.loads(presc.decode('UTF-8'))
-        return render_template('/private/user_portal/user_home.html', presc=presc)
+        return render_template('/private/user_portal/user_home.html', presc=presc, presc_uuid=presc_uuid)
     
-@user_bp.route('/pharmacy', methods=['GET'])
-def pharm():
+@user_bp.route('/pharm_orders', methods=['GET', 'POST'])
+def pharm_orders():
     '''purchase medicine from the pharmacy'''
-    flash('coming soon!')
-    return redirect(request.referrer)
+    if request.method == 'GET':
+        '''return pharmacy page'''
+        return render_template('/private/user_portal/pharm_orders.html')
+    else:
+        #check if the presc is being sent from pharmacy page or through a prescription uuid
+        presc_uuid = request.args.get('presc_uuid')
+        med_entries = []
+        if not presc_uuid:
+            #data is sent through a form so retrieve it
+            counter = 1
+            while True:
+                med_name = request.form.get(f'med_name{counter}')
+                dosage = request.form.get(f'dosage{counter}')
+                counter += 1
+                #check if all entries have been retrieved
+                if not med_name:
+                    current_app.logger.info('Prescription retrieved from form')
+                    break
+                med_entries.append(
+                    {
+                        'med_name': med_name,
+                        'dosage': dosage
+                    }
+                )
+        else:
+            #check if the presc exists in memory
+            try:
+                presc = redis_client.get(presc_uuid)
+                #missing presc due to expiry or does not exist
+                if not presc:
+                    #check for the prescription in db
+                    try:
+                        presc = db.session.query(Prescriptions).filter_by(presc_uuid=presc_uuid).first()
+                        #presc does not exist in either db or memory
+                        if not presc:
+                            flash('Prescription not found!')
+                            return redirect(request.referrer)
+                        #extract the prescription details
+                        med_entries = presc.prescription
+                        current_app.logger.info('prescription retrieved from database')
+                    except:
+                        current_app.logger.error(f'An error occured when retrieving prescription from db', exc_info=True)
+                else:
+                    #extract the prescription details
+                    med_entries = json.loads(presc.decode('UTF-8'))
+                    current_app.logger.info('Prescription retrieved from memory/redis')
+            except:
+                current_app.logger.error(f'An error occured while retrieving prescription from redis', exc_info=True)
+        #extract med names from med entries
+        med_names = [med['med_name'] for med in med_entries]
+        not_av = [] #meds not found
+        av_pharm = None
+        #search for the meds
+        try:
+            med_res = db.session.query(Pharmacy,
+                func.sum(Stock.price).label('total_price'),
+                func.count(distinct(Stock.meds_id)).label('med_count'))\
+                .join(Stock, Stock.pharm_id == Pharmacy.pharm_id)\
+                .join(Medicine, Stock.meds_id == Medicine.meds_id)\
+                .filter(or_(Medicine.brand_name.in_(med_names), Medicine.gen_name.in_(med_names)))\
+                .filter(Stock.avail == True)\
+                .group_by(Pharmacy.pharm_id).all()
+            #check for pharmacies with all the med ids
+            av_pharm = []
+            for pharm, total_price, med_count in med_res:
+                #skip pharmacies that don't have all the meds
+                if med_count != len(med_names):
+                    continue
+                else:
+                    #save the pharmacy details to be shown in the serach results
+                    av_pharm.append(
+                        {
+                            'email': pharm.email,
+                            'name': pharm.pharm_name,
+                            'price': total_price
+                        }
+                    )
+            current_app.logger.info('Data retrieved from database')
+        except Exception as err:
+            current_app.logger.error(f'An error occured when searching for meds in the database{err}')
+        return render_template('/private/user_portal/pharm_orders.html', av_pharm=av_pharm, not_av=not_av, med_entries=med_entries)
+
+
