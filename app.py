@@ -9,6 +9,7 @@ import os
 from flask_migrate import Migrate
 from flask_mail import Mail
 from log_conf import logger
+from flask_talisman import Talisman
 
 def create_app():
     '''configure the app from different modules'''
@@ -17,8 +18,9 @@ def create_app():
     load_dotenv() #load the env variables
     #secure app
     app.secret_key = os.getenv('APP_KEY')
-    app.config['SESSION_COOKIE_SECURE'] = True
-    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    # talisman = Talisman(app, content_security_policy=None) #ensure app is only served via https
+    # app.config['SESSION_COOKIE_SECURE'] = True #ensure cookies are only sent via https
+    # app.config['SESSION_COOKIE_HTTPONLY'] = True #prevent cookies from being manipulated with js on clientside
     
     #setup logging
     try:
@@ -84,4 +86,5 @@ except:
     raise
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, port=5000)
+    app.run(host='0.0.0.0', debug=True)
+    #port=443, ssl_context=('cert.pem', 'key.pem')

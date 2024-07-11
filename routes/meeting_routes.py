@@ -1,6 +1,7 @@
 '''creating and handling of virtual meetings'''
 
 from flask import (
+    current_app,
     Blueprint, 
     render_template, 
     request,
@@ -126,9 +127,11 @@ def meeting():
     user_id = meeting_info.get('user_id')
     staff_uuid = meeting_info.get('staff_uuid')
     booking_uuid = meeting_info.get('booking_uuid')
+    presc_uuid = meeting_info.get('presc_uuid')
     #add meeting to active meetings
     meeting_info = json.dumps({
                 'booking_uuid': booking_uuid,
+                'presc_uuid': presc_uuid,
                 'staff_uuid': staff_uuid,
                 'user_uuid': user_uuid,
                 'user_id': user_id,
@@ -149,17 +152,16 @@ def meeting():
     link = os.getenv('LINK')
     make_token = lambda payload: jwt.encode(payload, os.getenv('APP_KEY'), algorithm='HS256')
     payload = {
-        'meeting_id': meeting_id,
-        'owner': 'patient'
+        'meeting_id': meeting_id
         }
-    patient_ret_url = f'{link}/meeting/finished?token={make_token(payload)}'
-    #staff return url
-    payload['owner'] = 'staff'
-    staff_ret_url = f'{link}/meeting/finished?token={make_token(payload)}'
     #render the meeting page with respective return url
     if owner == 'patient':
+       payload['owner'] = 'patient'
+       patient_ret_url = f'{link}/meeting/finished?token={make_token(payload)}'
        return render_template('/public/meeting.html', meeting_id=meeting_id, api_key=api_key, ret_url=patient_ret_url)
     else:
+        payload['owner'] = 'staff'
+        staff_ret_url = f'{link}/meeting/finished?token={make_token(payload)}'
         return render_template('/public/meeting.html', meeting_id=meeting_id, api_key=api_key, ret_url=staff_ret_url)
     
 #check if both parties have ended the meeting
@@ -184,6 +186,7 @@ def finished():
     user_id = meeting_info.get('user_id')
     staff_uuid = meeting_info.get('staff_uuid')
     booking_uuid = meeting_info.get('booking_uuid')
+    presc_uuid = meeting_info.get('presc_uuid')
     start_time = meeting_info.get('start_time')
     end_time = get_cur_time().time()
     #update the details of the booking
@@ -195,7 +198,7 @@ def finished():
         db.session.commit()
     except Exception as error:
         db.session.rollback()
-        print(error)
+        current_app.logger.error('Updating the booking details after a completed meeting failed', exc_info=True)
     #remove the meeting from active meetings
     #check if both patient and staff have ended the meeting to clear it from the active meetings
     global fin_patient_access
@@ -210,7 +213,6 @@ def finished():
         fin_staff_access = False
     #reset the access to allow other meetings
     #save relevant details to track prescription
-    presc_uuid = gen_uuid()
     if owner == 'staff':
         #issue prescription and consultation report
         session['pending_presc'] = {
@@ -220,6 +222,6 @@ def finished():
         flash('Meeting is over. Log in to your portal to issue report and consultation immediately')
         return redirect(url_for('public.sign_in', portal='staff'))
     else:
-        session['pending_presc'] = presc_uuid
+        session['presc_uuid'] = presc_uuid
         flash('Meeting is over. Please login to your portal to receive prescription and report.')
         return redirect(url_for('public.sign_in', portal='user'))
