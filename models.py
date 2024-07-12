@@ -23,6 +23,7 @@ class Users(db.Model):
     prescriptions = relationship('Prescriptions', back_populates='user')
     bookings = relationship('Bookings', back_populates='user')
     payments = relationship('Payments', back_populates='user')
+    pharm_orders = relationship('Pharm_orders', back_populates='user')
 
 # Hospitals
 class Hospitals(db.Model):
@@ -157,6 +158,21 @@ class Prescriptions(db.Model):
     
     # relationships
     user = relationship('Users', back_populates='prescriptions')
+
+class Pharm_orders(db.Model):
+    __tablename__ = 'pharm_orders'
+
+    order_id = db.Column(db.Integer, primary_key=True, unique=True)
+    order_uuid = db.Column(db.String(36), unique=True)
+    presc = db.Column(db.String(2550))
+    price = db.Column(db.Float)
+    status = db.Column(db.String(36))
+
+    #fk
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+
+    #relationship
+    user = relationship('Users', back_populates='pharm_orders')
 
 # Bookings
 class Bookings(db.Model):

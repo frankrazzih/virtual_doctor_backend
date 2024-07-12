@@ -20,7 +20,8 @@ from models import (
     Prescriptions,
     Medicine,
     Stock,
-    Pharmacy
+    Pharmacy,
+    Pharm_orders
     )
 from .utils import (
     hash_pwd,
@@ -399,12 +400,14 @@ def presc():
         del session['presc_uuid']
         return render_template('/private/user_portal/user_home.html', presc=presc, presc_uuid=presc_uuid)
     
-@user_bp.route('/pharm_orders', methods=['GET', 'POST'])
-def pharm_orders():
+@user_bp.route('/pharm_search', methods=['GET', 'POST'])
+def pharm_search():
     '''purchase medicine from the pharmacy'''
     if request.method == 'GET':
         '''return pharmacy page'''
-        return render_template('/private/user_portal/pharm_orders.html')
+        if 'page' in request.args:
+            return redirect(url_for('public.sign_in'))
+        return render_template('/private/user_portal/pharm_orders.html', step1=True)
     else:
         #check if the presc is will be retrieved using the presc_uuid or from a prescription uploaded
         presc_uuid = request.form.get('presc_uuid')
@@ -448,11 +451,28 @@ def pharm_orders():
                     #extract the prescription details from redis
                     decoded_presc = json.loads(presc.decode('UTF-8'))
                     med_entries = decoded_presc['prescriptions']
-                    current_app.logger.info('Prescription retrieved from redis')
+                    #remove the presc from redis
+                    redis_client.delete(presc_uuid)
+                    current_app.logger.info('Prescription retrieved from redis and memory freed')
             except:
                 current_app.logger.error(f'An error occured while retrieving prescription from redis', exc_info=True)
         #extract med names from med entries
         med_names = [med['med_name'] for med in med_entries]
+        #create an order and store the med_entries in memory and db to be submitted to pharmacy for delivery
+        order_uuid = gen_uuid()
+        session['order_uuid'] = order_uuid
+        try:
+            redis_client.setex(order_uuid, 300, json.dumps(med_entries))
+            new_order = Pharm_orders(
+                order_uuid = order_uuid,
+                presc = json.dumps(med_entries),
+                status = 'incomplete'
+            )
+            db.session.add(new_order)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            current_app.logger.error('An error occured while storing order details to pharm_orders', exc_info=True)
         not_av = [] #meds not found
         av_pharm = None
         #search for the meds
@@ -475,14 +495,80 @@ def pharm_orders():
                     #save the pharmacy details to be shown in the serach results
                     av_pharm.append(
                         {
-                            'email': pharm.email,
                             'name': pharm.pharm_name,
-                            'price': total_price
+                            'price': total_price,
+                            'pharm_uuid': pharm.pharm_uuid
                         }
                     )
             current_app.logger.info('Prescription searched in database')
         except Exception as err:
             current_app.logger.error(f'An error occured when searching for meds in the database{err}')
-        return render_template('/private/user_portal/pharm_orders.html', av_pharm=av_pharm, not_av=not_av, med_entries=med_entries)
+        if not_av:
+            return render_template('/private/user_portal/pharm_orders.html', av_pharm=av_pharm, not_av=not_av, med_entries=med_entries, step1=True)
+        else:
+            return render_template('/private/user_portal/pharm_orders.html', av_pharm=av_pharm, not_av=not_av, med_entries=med_entries, step2=True)
 
-
+@user_bp.route('/pharm_orders', methods=['POST'])
+def pharm_orders():
+    '''Make orders to pharmacy for the submitted prescription'''
+    pharm_uuid = request.form.get('pharm_uuid')
+    order_uuid = session.get('order_uuid')
+    user_id = session.get('user_id')
+    if not user_id:
+        flash('Please login to finish order')
+        return redirect(url_for('public.sign_in', portal='user'))
+    #if order uuid is not av ask the user to make order again
+    if not order_uuid:
+        flash('An error occurred. Please make the order again')
+        return render_template('/private/user_portal/pharm_orders.html', step1=True)
+    price = request.form.get('price')
+    lat = request.form.get('lat')
+    long = request.form.get('long')
+    #process location
+    if not lat or not long:
+        flash('An error occurred while processing your location. Please make sure location is on in your device\
+              for deliveries to be made.')
+        return render_template('/private/user_portal/pharm_orders.html', step2=True)
+    location = f'https://www.google.com/maps/search/?api=1&query={lat},{long}'
+    #get pharm details and user details
+    pharm = None
+    try:
+        pharm = db.session.query(Pharmacy).filter_by(pharm_uuid=pharm_uuid).first()
+        user = db.session.query(Users).filter(Users.user_id == session['user_id']).first()
+        if not pharm or not user:
+            flash('An error occured when making the order. Please place the order again')
+            return render_template('/private/user_portal/pharm_orders.html', step1=True)
+    except:
+        current_app.logger.warning('An error occurred when searching for the pharmacy selected or to make an order', exc_info=True)
+    #retrieve the prescription
+    try:
+        presc = redis_client.get(session['order_uuid'])
+        #retrieve the presc from db if it does not exist in memory
+        if not presc:
+            presc = db.session.query(Pharm_orders).filter_by(order_uuid=order_uuid).first()
+            if not presc:
+                flash('An error occurred. Please make the order again')
+                return render_template('/private/user_portal/pharm_orders.html', step1=True)
+            else:
+                decoded_presc = json.loads(presc.presc)
+        else:
+            decoded_presc = json.loads(presc.decode('UTF-8'))
+    except:
+        current_app.logger.warning('An error occured while retrieving order info', exc_info=True)
+        flash('An error occured while placing the order. Please place the order again')
+        return render_template('/private/user_portal/pharm_orders.html', step1=True)
+    #send an email to pharmacy to make the delivery
+    subject = 'DELIVERY ALERT'
+    recipients = [pharm.email]
+    body = f'An order has been placed for the prescription below. The user details are also included\
+        Make the delivery as soon as possible\n\
+        Prescription:\n\
+            {decoded_presc}\n\
+        Total price: {price}\n\
+        User details:\n\
+        \t Contact: {user.contact}\n\
+        \t Location: {location}'
+    send_email(subject, recipients, body)
+    current_app.logger.info('Order made successfully')
+    return render_template('/private/user_portal/pharm_orders.html', step3=True)
+    

@@ -17,29 +17,15 @@
 <body>
 <!-- Navigation Bar -->
 <div class="phone">
-<a href="{{url_for('pharmacy.home')}}">
+<a href="{{url_for('public.home')}}">
 <img src="{{url_for('static', filename='images/logo.jpeg')}}" alt="logo" id="phone_logo">
 </a>
 <p><i><strong>"Your health matters to us"</strong></i></p>
 </div>
-<!-- Navigation Bar -->
-<div class="navbar">
-<a href="{{url_for('pharmacy.home')}}">Home</a>
-<a>
-    <img src="{{url_for('static', filename='images/menu.jpeg')}}" alt="Menu tab" onclick="coll_cont(event)" id="menu_img">
-</a>
-</div> 
-<div class="cont">
 <br>
-<img src="{{url_for('static', filename='images/logo.jpeg')}}" alt="logo" id="phone_logo">
-<a href="{{url_for('pharmacy.home')}}">Home</a>
-<a href="{{url_for('pharmacy.logout')}}">Logout</a>
-</div>
-<!--navbar for large devices-->
-<div class="large">
-<a href="{{url_for('pharmacy.home')}}">Home</a>
-<a href="{{url_for('pharmacy.logout')}}">Logout</a>
-</div>
+<a href="{{url_for('user.pharm_orders', page=back)}}">
+    <button>Back</button>
+</a>
 
     <!--flash message-->
 <div class="container">
@@ -55,13 +41,17 @@
    
 </div>
 
-<div class="form-container">
-  <form action="{{url_for('user.pharm_orders')}}" method="post" id="consultation-form">
-      <h2>Please fill in the form with your prescription</h2>
-      <div id="prescription-entries"></div>
-      <button type="submit" class="submit-button">Submit</button>
-  </form>
-</div>
+    <button onclick="toggle_form()">Upload prescription</button>
+    <!--toggle form visibility-->
+    {%if step1%}
+    <div class="form-container">
+    <form action="{{url_for('user.pharm_search')}}" method="post" id="consultation-form">
+        <h2>Please fill in the form with your prescription</h2>
+        <div id="prescription-entries"></div>
+        <button type="submit" class="submit-button">Submit</button>
+    </form>
+    </div>
+    {%endif%}
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -148,6 +138,7 @@
         }
     });
 </script>
+{%if step2%}
 <!--display prescription being searched-->
 {% if med_entries %}
     <h2>
@@ -174,14 +165,42 @@
     </h2>
     {% for pharm in av_pharm %}
         <div>
-            <p>Pharmacy: {{pharm['name']}}</p>
+            <p>Pharmacy: {{pharm.name}}</p>
             <p>Total cost: {{pharm.price}}</p>
+            <form action="{{url_for('user.pharm_orders')}}" method="post">
+                <input type="hidden" name="pharm_uuid" value="{{pharm.pharm_uuid}}">
+                <input type="hidden" name="price" value="{{pharm.price}}">
+                <input type="hidden" name="lat" id="lat">
+                <input type="hidden" name="long" id="long">
+                <button type="button" class="make_order_btn" onclick="getLocation()">Get location before submiting the order</button>
+                <input type="submit" value="Make order">
+            </form>
         </div>
     {%endfor%}
 {%else%}
     <h2>No results found!</h2>
 {%endif%}
+{%endif%}
 
+{%if step3%}
+    <h2>Order was placed successfully. The pharmacy will be in contact with you shortly regarding delivery</h2>
+{%endif%}
 
+<script>
+
+//get location
+function getLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function (position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+
+            // Populate the hidden form fields
+            document.getElementById('lat').value = latitude;
+            document.getElementById('long').value = longitude;
+        });
+    }
+}
+</script>
 
 {% extends "/public/base.html" %}

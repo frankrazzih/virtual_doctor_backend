@@ -45,12 +45,14 @@
   <img src="{{url_for('static', filename='images/logo.jpeg')}}" alt="logo" id="phone_logo">
   <a href="{{url_for('user.home')}}">Home</a>
   <a href="{{url_for('user.booking')}}">Booking</a>
+  <a href="{{url_for('user.pharm_search')}}">Pharmacy</a>
   <a href="{{url_for('user.logout')}}">Logout</a>
 </div>
  <!--navbar for large devices-->
  <div class="large">
   <a href="{{url_for('user.home')}}">Home</a>
   <a href="{{url_for('user.booking')}}">Booking</a>
+  <a href="{{url_for('user.pharm_search')}}">Pharmacy</a>
   <a href="{{url_for('user.logout')}}">Logout</a>
 </div>
 
@@ -131,7 +133,7 @@
         </ul>
       {% endfor %}
         <!--Submit the presc uuid-->
-      <form action="{{url_for('user.pharm_orders')}}" method="post">
+      <form action="{{url_for('user.pharm_search')}}" method="post">
         <input type="hidden" name="presc_uuid" value="{{presc_uuid}}">
         <input type="submit" value="Purchase from pharmacy">
       </form>
