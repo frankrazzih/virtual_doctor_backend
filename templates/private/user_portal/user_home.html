@@ -80,32 +80,10 @@
         {% endwith %}
         </section>
     </div>
-    
-    <div class="container_info">
-        <section>
-            <p style="text-align: left;">
-                In this digital age, we have not been left behind in 
-                making sure that even healthcare services can be rendered
-                from anywhere without the need for physical presence at the
-                hospital. You can meet a doctor virtually and then discuss as
-                to whether you should visit the hospital or get treatment from
-                your home.
-                Manage all your hospital related operations here.
-                That includes:
-            </p>
-                <ul>
-                    <li>Book Appointments</li>
-                    <li>Reschedule your Appointments</li>
-                    <li>View you medical records such as lab reports</li>
-                    <li>Get personalized medical support from our doctors</li>
-                    <li>Meet a doctor virtually at the comfort of your home</li>
-                    <li>Refill your prescriptions and get them delivered to you</li>
-                    <li>Pay for all your services online</li>
-                </ul>
-            
-        </section>
-    </div>
-    <a href="{{url}}">Access meetings here</a>
+    <!--button to acceess meetings immediately after booking-->
+    <a href="{{url}}">
+      <button>Access meetings here</button>
+    </a>
     <br>
     <!--get recenty issued prescription-->
     {% if get_presc %}
@@ -134,7 +112,7 @@
       {% endfor %}
         <!--Submit the presc uuid-->
       <form action="{{url_for('user.pharm_search')}}" method="post">
-        <input type="hidden" name="presc_uuid" value="{{presc_uuid}}">
+        <input type="hidden" name="presc_uuid" value="presc_uuid">
         <input type="submit" value="Purchase from pharmacy">
       </form>
     </div>

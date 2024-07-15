@@ -23,7 +23,7 @@
 <p><i><strong>"Your health matters to us"</strong></i></p>
 </div>
 <br>
-<a href="{{url_for('user.pharm_orders', page=back)}}">
+<a href="{{url_for('user.home', page=back)}}">
     <button>Back</button>
 </a>
 
@@ -45,9 +45,17 @@
     <!--toggle form visibility-->
     {%if step1%}
     <div class="form-container">
-    <form action="{{url_for('user.pharm_search')}}" method="post" id="consultation-form">
+    <form action="{{url_for('user.pharm_search')}}" method="post" id="consultation-form" enctype="multipart/form-data">
         <h2>Please fill in the form with your prescription</h2>
         <div id="prescription-entries"></div>
+        <h3>Or:</h3>
+        <br>
+        <label for="document">Upload Prescription Document (PDF, Word):</label>
+        <input type="file" id="document" name="document" accept=".pdf,.doc,.docx">
+        <br> <br>
+        <label for="image">Upload Prescription Image:</label>
+        <input type="file" id="image" name="image" accept="image/*">
+      <br> <br>
         <button type="submit" class="submit-button">Submit</button>
     </form>
     </div>

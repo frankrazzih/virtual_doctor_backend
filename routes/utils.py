@@ -6,6 +6,9 @@ import importlib
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 import redis
+import os
+from werkzeug.utils import secure_filename
+from flask import current_app
 
 executor = ThreadPoolExecutor() #to create a separate thread to send the email
 #set redis client
@@ -57,3 +60,10 @@ def clear_session_except(session: dict, keys: list)->None:
     keys_to_remove = [key for key in session.keys() if (key not in keys)]
     for key in keys_to_remove:
         session.pop(key, None)
+
+def pre_process_file(file):
+    '''pre-process a file'''
+    filename = secure_filename(file.filename)  # Secure the filename
+    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)  # Construct the full file path
+    file.save(file_path)  # Save the file
+    return file_path  # Return the file path

@@ -22,6 +22,13 @@ def create_app():
     # app.config['SESSION_COOKIE_SECURE'] = True #ensure cookies are only sent via https
     # app.config['SESSION_COOKIE_HTTPONLY'] = True #prevent cookies from being manipulated with js on clientside
     
+   # Set the upload folder path
+    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'uploads')
+
+    # Ensure the upload folder exists
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        os.makedirs(app.config['UPLOAD_FOLDER'])
+
     #setup logging
     try:
         app.logger = logger

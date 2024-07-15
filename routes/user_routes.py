@@ -30,15 +30,24 @@ from .utils import (
     send_email,
     get_cur_time,
     clear_session_except,
-    redis_client
+    redis_client,
+    pre_process_file
     )
 from .meeting_routes import create_room
 import json
-from os import getenv
 import jwt
 from sqlalchemy import or_
 from sqlalchemy.sql import func, distinct
-#create a blueprint
+import os
+import pytesseract
+from PIL import Image
+import spacy
+import fitz  # PyMuPDF
+import docx
+
+# Load spaCy AI model
+nlp = spacy.load('en_core_web_sm')
+
 user_bp = Blueprint('user', __name__)
 
 #registration endpoint
@@ -285,13 +294,13 @@ def finish_booking():
                 except Exception as error:
                     print(f'redis error: {error}')
                 #create meeting links
-                link = getenv('LINK')
+                link = os.getenv('LINK')
                 payload = {
                     'meeting_id': room_id,
                     'start_time': time_link,
                     'owner': 'patient'
                 }
-                make_token = lambda payload: jwt.encode(payload, getenv('APP_KEY'), algorithm='HS256')
+                make_token = lambda payload: jwt.encode(payload, os.getenv('APP_KEY'), algorithm='HS256')
                 #create a secure token with the payload
                 token = make_token(payload)
                 user_url = f'{link}/meeting?token={token}'
@@ -399,37 +408,72 @@ def presc():
         presc = json.loads(presc.decode('UTF-8'))
         del session['presc_uuid']
         return render_template('/private/user_portal/user_home.html', presc=presc, presc_uuid=presc_uuid)
-    
+
+#processing files and images containing precription
+def extract_text_from_pdf(file_path):
+    '''extract text from pdf file'''
+    try:
+        doc = fitz.open(file_path)
+        text = ""
+        for page_num in range(len(doc)):
+            page = doc.load_page(page_num)
+            text += page.get_text()
+        current_app.logger.info('Text extracted from pdf file successfully')
+    except:
+        current_app.logger.error('Error extracting text from pdf file', exc_info=True)
+    return text
+
+def extract_text_from_word(file_path):
+    '''extract text from word file'''
+    try:
+        doc = docx.Document(file_path)
+        text = ""
+        for paragraph in doc.paragraphs:
+            text += paragraph.text + "\n"
+        current_app.logger.info('Text extracted from docx file successfully')
+    except:
+        current_app.logger.error('Error extracting text from docx file', exc_info=True)
+    return text
+
+def extract_text_from_image(image_path):
+    '''extract text from image using image recognition'''
+    try:
+        img = Image.open(image_path)
+        text = pytesseract.image_to_string(img)
+        current_app.logger.info('Text extracted from image file successfully')
+    except:
+        current_app.logger.error('Error extracting text from image', exc_info=True)
+    return text
+
+def extract_presc_data(text):
+    '''extract prescription from text retrieved from file using natural language processing'''
+    try:
+        doc = nlp(text)
+        medications = []
+        for ent in doc.ents:
+            if ent.label_ in ['DRUG', 'MEDICATION']:
+                medications.append(ent.text)
+    except:
+        current_app.logger.error('Error extracting prescription from text')
+    return medications
+
 @user_bp.route('/pharm_search', methods=['GET', 'POST'])
 def pharm_search():
-    '''purchase medicine from the pharmacy'''
+    '''searches submitted prescription from the pharmacy'''
     if request.method == 'GET':
         '''return pharmacy page'''
         if 'page' in request.args:
             return redirect(url_for('public.sign_in'))
         return render_template('/private/user_portal/pharm_orders.html', step1=True)
     else:
-        #check if the presc is will be retrieved using the presc_uuid or from a prescription uploaded
-        presc_uuid = request.form.get('presc_uuid')
         med_entries = []
-        if not presc_uuid:
-            #data is sent through an uploaded prescrition so retrieve it
-            counter = 1
-            while True:
-                med_name = request.form.get(f'med_name{counter}')
-                dosage = request.form.get(f'dosage{counter}')
-                counter += 1
-                #check if all entries have been retrieved
-                if not med_name:
-                    current_app.logger.info('Uploaded prescription retrieved')
-                    break
-                med_entries.append(
-                    {
-                        'med_name': med_name,
-                        'dosage': dosage
-                    }
-                )
-        else:
+        #presc is to be retrieved using a presc uuid
+        if 'presc_uuid' in request.form:
+            presc_uuid = request.form.get('presc_uuid')
+            if not presc_uuid:
+                flash('An error occured. Please try again')
+                current_app.logger.error('Error retrieving presc uuid from from form.', exc_info=True)
+                return redirect(request.referrer)
             #check if the presc exists in memory
             try:
                 presc = redis_client.get(presc_uuid)
@@ -456,6 +500,50 @@ def pharm_search():
                     current_app.logger.info('Prescription retrieved from redis and memory freed')
             except:
                 current_app.logger.error(f'An error occured while retrieving prescription from redis', exc_info=True)
+        #prescription was uploaded as a document
+        elif 'document' in request.files or 'image' in request.files:
+            file = request.files.get('document') or request.files.get('image')
+            if file.filename == '':
+                flash('No file was uploaded')
+                return redirect(request.referrer)
+            if file:
+                file_path = pre_process_file(file)
+                #get text from the files
+                if file_path.endswith('.pdf'):
+                    text = extract_text_from_pdf(file_path)
+                elif file_path.endswith('.docx'):
+                    text = extract_text_from_word(file_path)
+                elif file_path.endswith(('.jpg', '.png', '.jpeg')):
+                    text = extract_text_from_image(file_path)
+                else:
+                    flash('Invalid file format. Supported file formats are PDF AND DOCX for documents and JPG, JPEG OR PNG for images')
+                    return redirect(request.referrer), 400
+                if not text:
+                    flash('Error processing file. Please try again')
+                    return redirect(request.referrer)
+            #extract prescription from text retrieved from file
+            med_entries = extract_presc_data(text)
+            return jsonify(med_entries)
+        #prescription typed manually
+        elif 'med_name1' in request.form:
+            counter = 1
+            while True:
+                med_name = request.form.get(f'med_name{counter}')
+                dosage = request.form.get(f'dosage{counter}')
+                counter += 1
+                #check if all entries have been retrieved
+                if not med_name:
+                    current_app.logger.info('Uploaded prescription retrieved')
+                    break
+                med_entries.append(
+                    {
+                        'med_name': med_name,
+                        'dosage': dosage
+                    }
+                )
+        else:
+            flash('No prescription was submitted')
+            return redirect(request.referrer)
         #extract med names from med entries
         med_names = [med['med_name'] for med in med_entries]
         #create an order and store the med_entries in memory and db to be submitted to pharmacy for delivery
