@@ -45,7 +45,7 @@ import spacy
 import fitz  # PyMuPDF
 import docx
 
-# Load spaCy AI model
+#Load spaCy AI model
 nlp = spacy.load('en_core_web_sm')
 
 user_bp = Blueprint('user', __name__)
