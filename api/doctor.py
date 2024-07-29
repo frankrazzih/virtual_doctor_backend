@@ -26,12 +26,12 @@ from .utils import (
     clear_session_except,
     redis_client
     )
-from .meeting_routes import create_room
+from .meeting import create_room
 from sqlalchemy.orm import join
 #create a blueprint
-staff_bp = Blueprint('staff', __name__)
+doctor_bp = Blueprint('doctor', __name__)
 
-@staff_bp.route('/', methods=['GET', 'POST'])
+@doctor_bp.route('/', methods=['GET', 'POST'])
 def home():
     '''route for staff homepage operations'''
     if request.method == 'GET':
@@ -44,8 +44,8 @@ def home():
         return render_template('/private/staff_portal/staff_home.html', url=url)
     else:
         pass
-@staff_bp.route('/sign_in', methods=['POST'])
-def sign_in():
+@doctor_bp.route('/sign_in', methods=['POST'])
+def login():
     '''staff sign in'''
     email = request.form['email']
     password = request.form['password']
@@ -75,7 +75,7 @@ def sign_in():
         return redirect(url_for('public.sign_in', portal='staff'))
 
 #logout
-@staff_bp.route('/logout', methods=['GET'])
+@doctor_bp.route('/logout', methods=['GET'])
 def logout():
     '''logout a staff'''
     session.clear()

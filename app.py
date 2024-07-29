@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''entry point to the program
 creates app and runs it'''
-from routes import register_routes
+from api import register_routes
 from flask import Flask
 from models import db
 from dotenv import load_dotenv
@@ -10,11 +10,13 @@ from flask_migrate import Migrate
 from flask_mail import Mail
 from log_conf import logger
 from flask_talisman import Talisman
+from flask_cors import CORS
 
 def create_app():
     '''configure the app from different modules'''
     app = Flask(__name__)
-    
+    CORS(app)
+
     load_dotenv() #load the env variables
     #secure app
     app.secret_key = os.getenv('APP_KEY')

@@ -33,25 +33,25 @@ from .utils import (
     redis_client,
     pre_process_file
     )
-from .meeting_routes import create_room
+from .meeting import create_room
 import json
 import jwt
 from sqlalchemy import or_
 from sqlalchemy.sql import func, distinct
-import os
-import pytesseract
-from PIL import Image
-import spacy
-import fitz  # PyMuPDF
-import docx
+# import os
+# import pytesseract
+# from PIL import Image
+# import spacy
+# import fitz  # PyMuPDF
+# import docx
 
 #Load spaCy AI model
-nlp = spacy.load('en_core_web_sm')
+#nlp = spacy.load('en_core_web_sm')
 
-user_bp = Blueprint('user', __name__)
+patient_bp = Blueprint('patient', __name__)
 
 #registration endpoint
-@user_bp.route('/register', methods=['POST', 'GET'])
+@patient_bp.route('/register', methods=['POST', 'GET'])
 def register():
     if request.method == 'POST':
         #collects the user registration details and save to the db
@@ -99,11 +99,12 @@ def register():
         return render_template('/private/user_portal/user_sign_up.html')
 
 # sign_in endpoint
-@user_bp.route('/sign_in', methods=['POST'])
-def sign_in():
-    """Checks if the entered password matches the one stored in the database for the customer"""
-    email = request.form['email']
-    password = request.form['password']
+@patient_bp.route('/login', methods=['POST'])
+def login():
+    'verifies the login credentials provided'
+    payload = request.get_json()
+    email = payload['email']
+    password = payload['pwd']
     try:
         user = db.session.query(Users).filter_by(email=email).first()
     except:
@@ -127,25 +128,21 @@ def sign_in():
                 get_presc = True
                 flash('Your prescription is being prepared by your doctor.\n\
                       It will be available in a few minutes')
-            else:
-                flash(f'Successfully logged in as {user.first_name} {user.last_name}')
-            return render_template('/private/user_portal/user_home.html', get_presc=get_presc)
+            return jsonify({'status': 'success'} ,{'name': f'{user.first_name} {user.last_name}'}), 200
         else:
-            flash('Wrong password! Please try again.')
-            return redirect(url_for('public.sign_in', portal='user'))
+            return 'Wrong password! please try again', 403
     else:
-        flash('Email does not exist! Please try again.')
-        return redirect(url_for('public.sign_in', portal='user'))
+        return 'Email does not exist! Please try again', 404
 
 #logout
-@user_bp.route('/logout', methods=['GET'])
+@patient_bp.route('/logout', methods=['GET'])
 def logout():
     '''logout a user'''
     session.clear()
     return redirect(url_for('public.home'))
 
 #user homepage
-@user_bp.route('/home', methods=['GET'])
+@patient_bp.route('/home', methods=['GET'])
 def home():
     '''user homepage'''
     if 'user_uuid' in session:
@@ -157,7 +154,7 @@ def home():
         return redirect(url_for('public.sign', portal='user'))
 
 #booking
-@user_bp.route('/booking', methods=['POST', 'GET'])
+@patient_bp.route('/booking', methods=['POST', 'GET'])
 def booking():
     '''booking endpoint'''
     if request.method == 'GET':
@@ -235,7 +232,7 @@ def booking():
             return redirect(url_for('public.sign_in', portal='user'))
 
 #finish booking
-@user_bp.route('/finish_booking', methods=['GET', 'POST'])
+@patient_bp.route('/finish_booking', methods=['GET', 'POST'])
 def finish_booking():
     if request.method == 'GET':
         #retun the booking details for the user to confirm
@@ -340,7 +337,7 @@ def finish_booking():
                 flash('Booking failed! Try again.')
                 return redirect(url_for('user.booking'))
 
-@user_bp.route('/presc', methods=['GET', 'POST'])
+@patient_bp.route('/presc', methods=['GET', 'POST'])
 def presc():
     '''manage the users prescriptions'''
     #store prescriptions issued by staff
@@ -409,55 +406,55 @@ def presc():
         del session['presc_uuid']
         return render_template('/private/user_portal/user_home.html', presc=presc, presc_uuid=presc_uuid)
 
-#processing files and images containing precription
-def extract_text_from_pdf(file_path):
-    '''extract text from pdf file'''
-    try:
-        doc = fitz.open(file_path)
-        text = ""
-        for page_num in range(len(doc)):
-            page = doc.load_page(page_num)
-            text += page.get_text()
-        current_app.logger.info('Text extracted from pdf file successfully')
-    except:
-        current_app.logger.error('Error extracting text from pdf file', exc_info=True)
-    return text
+# #processing files and images containing precription
+# def extract_text_from_pdf(file_path):
+#     '''extract text from pdf file'''
+#     try:
+#         doc = fitz.open(file_path)
+#         text = ""
+#         for page_num in range(len(doc)):
+#             page = doc.load_page(page_num)
+#             text += page.get_text()
+#         current_app.logger.info('Text extracted from pdf file successfully')
+#     except:
+#         current_app.logger.error('Error extracting text from pdf file', exc_info=True)
+#     return text
 
-def extract_text_from_word(file_path):
-    '''extract text from word file'''
-    try:
-        doc = docx.Document(file_path)
-        text = ""
-        for paragraph in doc.paragraphs:
-            text += paragraph.text + "\n"
-        current_app.logger.info('Text extracted from docx file successfully')
-    except:
-        current_app.logger.error('Error extracting text from docx file', exc_info=True)
-    return text
+# def extract_text_from_word(file_path):
+#     '''extract text from word file'''
+#     try:
+#         doc = docx.Document(file_path)
+#         text = ""
+#         for paragraph in doc.paragraphs:
+#             text += paragraph.text + "\n"
+#         current_app.logger.info('Text extracted from docx file successfully')
+#     except:
+#         current_app.logger.error('Error extracting text from docx file', exc_info=True)
+#     return text
 
-def extract_text_from_image(image_path):
-    '''extract text from image using image recognition'''
-    try:
-        img = Image.open(image_path)
-        text = pytesseract.image_to_string(img)
-        current_app.logger.info('Text extracted from image file successfully')
-    except:
-        current_app.logger.error('Error extracting text from image', exc_info=True)
-    return text
+# def extract_text_from_image(image_path):
+#     '''extract text from image using image recognition'''
+#     try:
+#         img = Image.open(image_path)
+#         text = pytesseract.image_to_string(img)
+#         current_app.logger.info('Text extracted from image file successfully')
+#     except:
+#         current_app.logger.error('Error extracting text from image', exc_info=True)
+#     return text
 
-def extract_presc_data(text):
-    '''extract prescription from text retrieved from file using natural language processing'''
-    try:
-        doc = nlp(text)
-        medications = []
-        for ent in doc.ents:
-            if ent.label_ in ['DRUG', 'MEDICATION']:
-                medications.append(ent.text)
-    except:
-        current_app.logger.error('Error extracting prescription from text')
-    return medications
+# def extract_presc_data(text):
+#     '''extract prescription from text retrieved from file using natural language processing'''
+#     try:
+#         doc = nlp(text)
+#         medications = []
+#         for ent in doc.ents:
+#             if ent.label_ in ['DRUG', 'MEDICATION']:
+#                 medications.append(ent.text)
+#     except:
+#         current_app.logger.error('Error extracting prescription from text')
+#     return medications
 
-@user_bp.route('/pharm_search', methods=['GET', 'POST'])
+@patient_bp.route('/pharm_search', methods=['GET', 'POST'])
 def pharm_search():
     '''searches submitted prescription from the pharmacy'''
     if request.method == 'GET':
@@ -500,30 +497,30 @@ def pharm_search():
                     current_app.logger.info('Prescription retrieved from redis and memory freed')
             except:
                 current_app.logger.error(f'An error occured while retrieving prescription from redis', exc_info=True)
-        #prescription was uploaded as a document
-        elif 'document' in request.files or 'image' in request.files:
-            file = request.files.get('document') or request.files.get('image')
-            if file.filename == '':
-                flash('No file was uploaded')
-                return redirect(request.referrer)
-            if file:
-                file_path = pre_process_file(file)
-                #get text from the files
-                if file_path.endswith('.pdf'):
-                    text = extract_text_from_pdf(file_path)
-                elif file_path.endswith('.docx'):
-                    text = extract_text_from_word(file_path)
-                elif file_path.endswith(('.jpg', '.png', '.jpeg')):
-                    text = extract_text_from_image(file_path)
-                else:
-                    flash('Invalid file format. Supported file formats are PDF AND DOCX for documents and JPG, JPEG OR PNG for images')
-                    return redirect(request.referrer), 400
-                if not text:
-                    flash('Error processing file. Please try again')
-                    return redirect(request.referrer)
-            #extract prescription from text retrieved from file
-            med_entries = extract_presc_data(text)
-            return jsonify(med_entries)
+        # #prescription was uploaded as a document
+        # elif 'document' in request.files or 'image' in request.files:
+        #     file = request.files.get('document') or request.files.get('image')
+        #     if file.filename == '':
+        #         flash('No file was uploaded')
+        #         return redirect(request.referrer)
+        #     if file:
+        #         file_path = pre_process_file(file)
+        #         #get text from the files
+        #         if file_path.endswith('.pdf'):
+        #             text = extract_text_from_pdf(file_path)
+        #         elif file_path.endswith('.docx'):
+        #             text = extract_text_from_word(file_path)
+        #         elif file_path.endswith(('.jpg', '.png', '.jpeg')):
+        #             text = extract_text_from_image(file_path)
+        #         else:
+        #             flash('Invalid file format. Supported file formats are PDF AND DOCX for documents and JPG, JPEG OR PNG for images')
+        #             return redirect(request.referrer), 400
+        #         if not text:
+        #             flash('Error processing file. Please try again')
+        #             return redirect(request.referrer)
+        #     #extract prescription from text retrieved from file
+        #     med_entries = extract_presc_data(text)
+        #     return jsonify(med_entries)
         #prescription typed manually
         elif 'med_name1' in request.form:
             counter = 1
@@ -596,7 +593,7 @@ def pharm_search():
         else:
             return render_template('/private/user_portal/pharm_orders.html', av_pharm=av_pharm, not_av=not_av, med_entries=med_entries, step2=True)
 
-@user_bp.route('/pharm_orders', methods=['POST'])
+@patient_bp.route('/pharm_orders', methods=['POST'])
 def pharm_orders():
     '''Make orders to pharmacy for the submitted prescription'''
     pharm_uuid = request.form.get('pharm_uuid')
