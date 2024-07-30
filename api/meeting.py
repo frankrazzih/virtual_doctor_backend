@@ -19,7 +19,7 @@ from .utils import (
     clear_session_except,
     redis_client
     )
-from models import(
+from models.models import(
     Bookings,
     Prescriptions,
     db

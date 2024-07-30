@@ -10,7 +10,7 @@ from flask import (
     redirect,
     url_for,
     flash)
-from models import (
+from models.models import (
     db,
     Users,
     Hospitals,

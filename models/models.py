@@ -1,15 +1,16 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Date, Enum, ForeignKey, Boolean, Time
 from sqlalchemy.orm import relationship
 from flask_sqlalchemy import SQLAlchemy
+from base_model import Base_model
 
 db = SQLAlchemy()
 
-# Users
-class Users(db.Model):
-    __tablename__ = 'users'
+# Patients
+class Patients(db.Model, Base_model):
+    __tablename__ = 'patients'
 
-    user_id = db.Column(db.Integer, unique=True, primary_key=True)
-    user_uuid = db.Column(db.String(36), unique=True)  # Updated to String
+    patient_id = db.Column(db.Integer, unique=True, primary_key=True)
+    patient_uuid = db.Column(db.String(36), unique=True)  # Updated to String
     first_name = db.Column(db.String(255))
     last_name = db.Column(db.String(255))
     email = db.Column(db.String(255), unique=True)
@@ -20,13 +21,13 @@ class Users(db.Model):
     reg_date = db.Column(db.Date)
     
     # relationships
-    prescriptions = relationship('Prescriptions', back_populates='user')
-    bookings = relationship('Bookings', back_populates='user')
-    payments = relationship('Payments', back_populates='user')
-    pharm_orders = relationship('Pharm_orders', back_populates='user')
+    prescriptions = relationship('Prescriptions', back_populates='patient')
+    bookings = relationship('Bookings', back_populates='patient')
+    payments = relationship('Payments', back_populates='patient')
+    pharm_orders = relationship('Pharm_orders', back_populates='patient')
 
 # Hospitals
-class Hospitals(db.Model):
+class Hospitals(db.Model, Base_model):
     __tablename__ = 'hospitals'
 
     hosp_id = db.Column(db.Integer, unique=True, primary_key=True)
@@ -39,7 +40,7 @@ class Hospitals(db.Model):
     reg_date = db.Column(db.Date)
     
     # relationships
-    staff = relationship('Staff', back_populates='hospital')
+    doctors = relationship('Doctors', back_populates='hospital')
     pharmacy = relationship('Pharmacy', back_populates='hospital')
     bookings = relationship('Bookings', back_populates='hospital')
     payments = relationship('Payments', back_populates='hospital')
@@ -63,13 +64,13 @@ class Services(db.Model):
         db.UniqueConstraint('service', 'hosp_id', name='service_hosp_unique'),
     )
 
-# Staff
-class Staff(db.Model):
-    __tablename__ = 'staff'
+# Doctors
+class Doctors(db.Model, Base_model):
+    __tablename__ = 'doctors'
 
-    staff_id = db.Column(db.Integer, unique=True, primary_key=True)
-    staff_uuid = db.Column(db.String(36), unique=True)
-    staff_name = db.Column(db.String(255))
+    doctor_id = db.Column(db.Integer, unique=True, primary_key=True)
+    doctor_uuid = db.Column(db.String(36), unique=True)
+    doctor_name = db.Column(db.String(255))
     email = db.Column(db.String(255), unique=True)
     contact = db.Column(db.String(30), unique=True)
     service = db.Column(db.String(255))
@@ -80,11 +81,11 @@ class Staff(db.Model):
     hosp_id = db.Column(db.Integer, db.ForeignKey('hospitals.hosp_id'))
     
     # relationships
-    bookings = relationship('Bookings', back_populates='staff')
-    hospital = relationship('Hospitals', back_populates='staff')
+    bookings = relationship('Bookings', back_populates='doctor')
+    hospital = relationship('Hospitals', back_populates='doctors')
 
 # Pharmacy
-class Pharmacy(db.Model):
+class Pharmacy(db.Model, Base_model):
     __tablename__ = 'pharmacy'
 
     pharm_id = db.Column(db.Integer, primary_key=True, unique=True)
@@ -150,15 +151,15 @@ class Prescriptions(db.Model):
     date_issued = db.Column(db.DateTime)
     report = db.Column(db.String(2550))
     prescription = db.Column(db.String(2550))
-    staff_id = db.Column(db.Integer)
+    doctor_id = db.Column(db.Integer)
     hosp_id = db.Column(db.Integer)
     status = db.Column(db.String(25))
     
-    # fk to users
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    # fk to patients
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.patient_id'))
     
     # relationships
-    user = relationship('Users', back_populates='prescriptions')
+    patient = relationship('Patients', back_populates='prescriptions')
 
 class Pharm_orders(db.Model):
     __tablename__ = 'pharm_orders'
@@ -171,12 +172,12 @@ class Pharm_orders(db.Model):
     order_date = db.Column(db.DateTime)
 
     #fk
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.patient_id'))
     pharm_id = db.Column(db.Integer, db.ForeignKey('pharmacy.pharm_id'))
     pay_id = db.Column(db.Integer, db.ForeignKey('payments.pay_id'))
 
     #relationship
-    user = relationship('Users', back_populates='pharm_orders')
+    patient = relationship('Patients', back_populates='pharm_orders')
     pharmacy = relationship('Pharmacy', back_populates='pharm_orders')
     payment = relationship('Payments', back_populates='pharm_orders')
 
@@ -195,14 +196,14 @@ class Bookings(db.Model):
     complete = db.Column(db.Boolean, default=False)
     
     # fk
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.patient_id'))
     hosp_id = db.Column(db.Integer, db.ForeignKey('hospitals.hosp_id'))
-    staff_id = db.Column(db.Integer, db.ForeignKey('staff.staff_id'))
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.doctor_id'))
     
     # relationships
-    user = relationship('Users', back_populates='bookings')
+    patient = relationship('Patients', back_populates='bookings')
     hospital = relationship('Hospitals', back_populates='bookings')
-    staff = relationship('Staff', back_populates='bookings')
+    doctor = relationship('Doctors', back_populates='bookings')
     payment = relationship('Payments', back_populates='booking')
 
 # Payments
@@ -219,13 +220,13 @@ class Payments(db.Model):
     transaction_id = db.Column(db.String(30))
     
     # fk
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.patient_id'))
     pharm_id = db.Column(db.Integer, db.ForeignKey('pharmacy.pharm_id'))
     hosp_id = db.Column(db.Integer, db.ForeignKey('hospitals.hosp_id'))
     booking_id = db.Column(db.Integer, db.ForeignKey('bookings.booking_id'))
     
     # relationships
-    user = relationship('Users', back_populates='payments')
+    patient = relationship('Patients', back_populates='payments')
     pharmacy = relationship('Pharmacy', back_populates='payments')
     hospital = relationship('Hospitals', back_populates='payments')
     revenues = relationship('Revenue', back_populates='payment')

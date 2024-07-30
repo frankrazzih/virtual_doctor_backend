@@ -3,7 +3,7 @@
 creates app and runs it'''
 from api import register_routes
 from flask import Flask
-from models import db
+from models.models import db
 from dotenv import load_dotenv
 import os
 from flask_migrate import Migrate
@@ -11,11 +11,13 @@ from flask_mail import Mail
 from log_conf import logger
 from flask_talisman import Talisman
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager
 
 def create_app():
     '''configure the app from different modules'''
     app = Flask(__name__)
     CORS(app)
+    JWTManager(app)
 
     load_dotenv() #load the env variables
     #secure app
@@ -71,7 +73,7 @@ def create_app():
         app.logger.critical(f'Blueprints registration failed!', exc_info=True)
         raise
     
-    #configure my mail server
+    #configure mail server
     try:
         app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
         app.config['MAIL_PORT'] = os.getenv('MAIL_PORT')

@@ -11,7 +11,7 @@ from flask import (
     url_for,
     flash)
 from flask_mail import Message
-from models import (
+from models.models import (
     db,
     Pharmacy,
     Stock,
