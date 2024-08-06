@@ -13,7 +13,7 @@ from flask_mail import Message
 from models.models import (
     db,
     Hospitals,
-    Staff,
+    Doctors,
     Services
     )
 from .utils import (

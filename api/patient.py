@@ -12,9 +12,9 @@ from flask import (
     flash)
 from models.models import (
     db,
-    Users,
+    Patients,
     Hospitals,
-    Staff,
+    Doctors,
     Bookings,
     Services,
     Prescriptions,

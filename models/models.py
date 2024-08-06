@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Date, Enum, ForeignKey, Boolean, Time
 from sqlalchemy.orm import relationship
 from flask_sqlalchemy import SQLAlchemy
-from base_model import Base_model
+from .base_model import Base_model
 
 db = SQLAlchemy()
 
@@ -11,14 +11,13 @@ class Patients(db.Model, Base_model):
 
     patient_id = db.Column(db.Integer, unique=True, primary_key=True)
     patient_uuid = db.Column(db.String(36), unique=True)  # Updated to String
-    first_name = db.Column(db.String(255))
-    last_name = db.Column(db.String(255))
+    name = db.Column(db.String(255))
     email = db.Column(db.String(255), unique=True)
     contact = db.Column(db.String(30), unique=True)
     birthday = db.Column(db.Date)
-    gender = db.Column(db.Enum('male', 'female', 'trans', 'undisclosed', 'other'))
+    gender = db.Column(db.Enum('male', 'female', 'trans', 'other'))
     password = db.Column(db.String(255))
-    reg_date = db.Column(db.Date)
+    reg_date = db.Column(db.DateTime)
     
     # relationships
     prescriptions = relationship('Prescriptions', back_populates='patient')
