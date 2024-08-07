@@ -10,14 +10,14 @@ class Patients(db.Model, Base_model):
     __tablename__ = 'patients'
 
     patient_id = db.Column(db.Integer, unique=True, primary_key=True)
-    patient_uuid = db.Column(db.String(36), unique=True)  # Updated to String
-    name = db.Column(db.String(255))
-    email = db.Column(db.String(255), unique=True)
-    contact = db.Column(db.String(30), unique=True)
-    birthday = db.Column(db.Date)
+    patient_uuid = db.Column(db.String(36), unique=True, nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(255), unique=True, nullable=False)
+    contact = db.Column(db.String(30), unique=True, nullable=False)
+    birthday = db.Column(db.Date, nullable=False)
     gender = db.Column(db.Enum('male', 'female', 'trans', 'other'))
-    password = db.Column(db.String(255))
-    reg_date = db.Column(db.DateTime)
+    password = db.Column(db.String(255), nullable=False)
+    reg_date = db.Column(db.DateTime, nullable=False)
     
     # relationships
     prescriptions = relationship('Prescriptions', back_populates='patient')
@@ -30,13 +30,14 @@ class Hospitals(db.Model, Base_model):
     __tablename__ = 'hospitals'
 
     hosp_id = db.Column(db.Integer, unique=True, primary_key=True)
-    hosp_uuid = db.Column(db.String(36), unique=True)  # Updated to String
-    hosp_name = db.Column(db.String(255))
-    hosp_location = db.Column(db.String(255))
-    contact = db.Column(db.String(30), unique=True)
-    email = db.Column(db.String(255), unique=True)
+    hosp_uuid = db.Column(db.String(36), unique=True, nullable=False)
+    hosp_name = db.Column(db.String(255), nullable=False)
+    hosp_address = db.Column(db.String(255), nullable=False)
+    contact = db.Column(db.String(30), unique=True, nullable=False)
+    email = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255))
-    reg_date = db.Column(db.Date)
+    verification = db.Column(db.Enum('verified', 'unverfied'), default='unverified')
+    reg_date = db.Column(db.Date, default=None)
     
     # relationships
     doctors = relationship('Doctors', back_populates='hospital')
@@ -90,10 +91,11 @@ class Pharmacy(db.Model, Base_model):
     pharm_id = db.Column(db.Integer, primary_key=True, unique=True)
     pharm_uuid = db.Column(db.String(36), unique=True)  # Updated to String
     pharm_name = db.Column(db.String(255))
-    pharm_location = db.Column(db.String(255))
+    pharm_address = db.Column(db.String(255))
     contact = db.Column(db.String(30), unique=True)
     email = db.Column(db.String(255), unique=True)
     password = db.Column(db.String(255))
+    verification = db.Column(db.Enum('verified', 'unverfied'), default='unverified')
     reg_date = db.Column(db.Date)
     
     # fk to hospitals

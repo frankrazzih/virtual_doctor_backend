@@ -22,9 +22,9 @@ def create_app():
     load_dotenv() #load the env variables
     #secure app
     app.secret_key = os.getenv('APP_KEY')
-    # talisman = Talisman(app, content_security_policy=None) #ensure app is only served via https
-    # app.config['SESSION_COOKIE_SECURE'] = True #ensure cookies are only sent via https
-    # app.config['SESSION_COOKIE_HTTPONLY'] = True #prevent cookies from being manipulated with js on clientside
+    # talisman = Talisman(app, content_security_policy=None) 
+    # app.config['SESSION_COOKIE_SECURE'] = True 
+    # app.config['SESSION_COOKIE_HTTPONLY'] = True 
     
    # Set the upload folder path
     app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'uploads')
