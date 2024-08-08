@@ -55,15 +55,15 @@ def get_cur_time():
     '''returns current time'''
     return datetime.now()
 
-#clear session keys except the one needed
 def clear_session_except(session: dict, keys: list)->None:
+    '''clear session keys except the one needed'''
     keys_to_remove = [key for key in session.keys() if (key not in keys)]
     for key in keys_to_remove:
         session.pop(key, None)
 
-def pre_process_file(file):
-    '''pre-process a file'''
-    filename = secure_filename(file.filename)  # Secure the filename
-    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)  # Construct the full file path
-    file.save(file_path)  # Save the file
-    return file_path  # Return the file path
+def pre_process_file(file, dir_name, username)->str:
+    '''pre-process a file and store it'''
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], dir_name, username + '-' + filename)
+    file.save(file_path)
+    return file_path

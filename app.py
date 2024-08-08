@@ -26,13 +26,6 @@ def create_app():
     # app.config['SESSION_COOKIE_SECURE'] = True 
     # app.config['SESSION_COOKIE_HTTPONLY'] = True 
     
-   # Set the upload folder path
-    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'uploads')
-
-    # Ensure the upload folder exists
-    if not os.path.exists(app.config['UPLOAD_FOLDER']):
-        os.makedirs(app.config['UPLOAD_FOLDER'])
-
     #setup logging
     try:
         app.logger = logger
@@ -40,13 +33,31 @@ def create_app():
     except:
         app.logger.warning(f'Logging setup failed!', exc_info=True)
         raise
+
+    #create upload directories
+    try:
+        app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'uploads')
+        #verification directories
+        pharmacy_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'pharmacy')
+        hospital_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'hospitals')
+        #prescriptions directories
+        prescription_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'prescriptions')
+
+        # Ensure the directories exist
+        for dir in [app.config['UPLOAD_FOLDER'], pharmacy_dir, hospital_dir, prescription_dir]:
+            if not os.path.exists(dir):
+                os.makedirs(dir)
+        app.logger.info('Uploads directory set up successfully', exc_info=True)
+    except:
+        app.logger.critical('Uploads directory not set up', exc_info=True)
+        raise
     
     #configure the db
     try:
         db_pwd = os.getenv('DB_PASSWORD')
         db_user = os.getenv('DB_USER')
         db_host = os.getenv('DB_HOST')
-        app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{db_user}:{db_pwd}@{db_host}/original_virtual_doctor'
+        app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{db_user}:{db_pwd}@{db_host}/virtual_doctor'
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         app.logger.info('DataBase set up successfully')
     except:

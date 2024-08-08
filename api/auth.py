@@ -12,16 +12,29 @@ from .schema import validate_reg_data
 from marshmallow import ValidationError
 from datetime import datetime
 import random
+import json
 from .utils import (
     gen_uuid,
-    get_cur_time
+    get_cur_time,
+    pre_process_file,
+    send_email
 )
 
 auth_bp = Blueprint('auth', __name__)
 
-@auth_bp.route('/register', methods=['POST'])
-def register():
-    payload = request.get_json()
+@auth_bp.route('/register/<string:role>', methods=['POST'])
+def register(role):
+    #retrieve payload depending on role
+    if role == 'patient':
+        payload = request.get_json()
+    elif role == 'hospital' or role == 'pharmacy':
+        '''check if a file exists'''
+        files = request.files.getlist('files')
+        if not files:
+            return 'Missing file', 400
+        payload = json.loads(request.form.get('payload'))
+    else:
+        return 'Invalid url', 400
     #validate payload
     schema = validate_reg_data()
     try:
@@ -38,10 +51,10 @@ def register():
     #store data
     role = payload['role']
     name = payload['name']
-    email = payload['contact']
+    email = payload['email']
     contact = payload['contact']
     if role == 'patient':
-        new_patient = Patients(
+        new_user = Patients(
             patient_uuid = gen_uuid(),
             name = name,
             email = email,
@@ -50,26 +63,56 @@ def register():
             gender = payload['gender'],
             reg_date = get_cur_time()
         )
-        new_patient.set_pwd(payload['pwd'])
-    address = payload['address']
+        new_user.set_pwd(payload['pwd'])
     if role == 'hospital':
-        new_hosp = Hospitals(
+        new_user = Hospitals(
             hosp_uuid = gen_uuid(),
             hosp_name = name,
-            hosp_address = address,
+            hosp_address = payload['address'],
             contact = contact,
             email = email,
         )
-        new_hosp.set_pwd(random.randint(000000, 999999))
-    elif role == 'pahrmacy':
-        new_pharm = Pharmacy(
+        #one time pwd to be issued after the hospital has been verified
+        new_user.set_pwd(random.randint(000000, 999999))
+    elif role == 'pharmacy':
+        new_user = Pharmacy(
             pharm_uuid = gen_uuid(),
             pharm_name = name,
-            pharm_address = address,
+            pharm_address = payload['address'],
             contact = contact,
             email = email,
         )
-        new_pharm.set_pwd(random.randint(000000, 999999))
+        #one time pwd to be issued after the pharmacy has been verified
+        new_user.set_pwd(random.randint(000000, 999999))
+    try:
+        db.session.add(new_user)
+        db.session.commit()
+    except:
+        db.session.rollback()
+        current_app.logger.error(f'{role} registration failed', exc_info=True)
+        return 'registration failed', 500
+    #save the files for hospital and pharmacy
+    if role != 'patient':
+        try:
+            for file in files:
+                pre_process_file(file, role, name)
+        except:
+            current_app.logger.error(f'File for {role} not saved', exc_info=True)
+            return 'An error occured while saving the file', 500
+        #email body
+        body = f'Your registration documents have been received. We will verfiy them and\
+            get back to you as soon as possible. Thank you for considering to offer your services through us.'
+    else:
+        #email body
+        body = f'Thank you for registering with Virtual Doctor..\
+            We ensure you get quality healthcare anywhere anytime.\
+                Your doctor is a few clicks away. Feel free to reach out incase of any issues.'
+    #send email
+    subject = 'Virtual Doctor registration'
+    recipients = [email]
+    send_email(subject, recipients, body)
+    return 'registration success', 201
+
 
 @auth_bp.route('/login/<string:role>', methods=['POST'])
 def login(role):

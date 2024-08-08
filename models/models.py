@@ -36,7 +36,7 @@ class Hospitals(db.Model, Base_model):
     contact = db.Column(db.String(30), unique=True, nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255))
-    verification = db.Column(db.Enum('verified', 'unverfied'), default='unverified')
+    verification = db.Column(db.Enum('verified', 'unverified'), default='unverified')
     reg_date = db.Column(db.Date, default=None)
     
     # relationships
