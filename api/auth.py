@@ -27,7 +27,12 @@ def register(role):
     #retrieve payload depending on role
     if role == 'patient':
         payload = request.get_json()
+        user = Patients
     elif role == 'hospital' or role == 'pharmacy':
+        if role == 'hospital':
+            user = Hospitals
+        else:
+            user = Pharmacy
         '''check if a file exists'''
         files = request.files.getlist('files')
         if not files:
@@ -53,6 +58,10 @@ def register(role):
     name = payload['name']
     email = payload['email']
     contact = payload['contact']
+    #check if user exists
+    user_exists = db.session.query(user).filter_by(email=email).first()
+    if user_exists:
+        return 'User already exists', 409
     if role == 'patient':
         new_user = Patients(
             patient_uuid = gen_uuid(),
@@ -73,7 +82,7 @@ def register(role):
             email = email,
         )
         #one time pwd to be issued after the hospital has been verified
-        new_user.set_pwd(random.randint(000000, 999999))
+        new_user.set_pwd(str(random.randint(000000, 999999)))
     elif role == 'pharmacy':
         new_user = Pharmacy(
             pharm_uuid = gen_uuid(),
@@ -83,7 +92,7 @@ def register(role):
             email = email,
         )
         #one time pwd to be issued after the pharmacy has been verified
-        new_user.set_pwd(random.randint(000000, 999999))
+        new_user.set_pwd(str(random.randint(000000, 999999)))
     try:
         db.session.add(new_user)
         db.session.commit()
