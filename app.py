@@ -12,20 +12,32 @@ from log_conf import logger
 from flask_talisman import Talisman
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from flask_wtf.csrf import CSRFProtect
+
+csrf = None
 
 def create_app():
     '''configure the app from different modules'''
     app = Flask(__name__)
-    CORS(app)
-    JWTManager(app)
 
     load_dotenv() #load the env variables
     #secure app
     app.secret_key = os.getenv('APP_KEY')
-    # talisman = Talisman(app, content_security_policy=None) 
-    # app.config['SESSION_COOKIE_SECURE'] = True 
-    # app.config['SESSION_COOKIE_HTTPONLY'] = True 
-    
+    # Set up JWT
+    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
+    app.config['JWT_TOKEN_LOCATION'] = ['cookies']
+    #app.config['JWT_COOKIE_SECURE'] = True
+    app.config['JWT_ACCESS_COOKIE_PATH'] = '/'
+    #app.config['JWT_COOKIE_CSRF_PROTECT'] = True  # Enable CSRF protection for cookies
+    JWTManager(app)
+
+    #serve the app over https only
+    # talisman = Talisman(app, content_security_policy=None)
+
+    CORS(app)
+    global csrf
+    csrf = CSRFProtect(app)
+
     #setup logging
     try:
         app.logger = logger

@@ -17,7 +17,7 @@ from models.models import (
     Bookings,
     Services
     )
-from .utils import (
+from ..utils import (
     hash_pwd,
     check_pwd,
     gen_uuid,

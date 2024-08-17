@@ -8,22 +8,38 @@ from models.models import (
 )
 from flask_jwt_extended import create_access_token, jwt_required, get_current_user
 from flask import request, jsonify, Blueprint, current_app, make_response
-from .schema import validate_reg_data
+from .schema import validate_schema
 from marshmallow import ValidationError
 from datetime import datetime
 import random
 import json
-from .utils import (
+from ..utils import (
     gen_uuid,
     get_cur_time,
     pre_process_file,
-    send_email
+    send_email,
+    create_random_pwd
+    
 )
 
 auth_bp = Blueprint('auth', __name__)
 
+def check_schema(payload: dict, activity: str)->dict:
+    '''validates the schema'''
+    schema = validate_schema(activity)
+    try:
+        schema.load(payload)
+    except ValidationError as err:
+        return {
+                'error':{
+                    'type': 'ValidationError',
+                    'message': err.messages
+                }
+            }
+
 @auth_bp.route('/register/<string:role>', methods=['POST'])
 def register(role):
+    '''user registration endpoint'''
     #retrieve payload depending on role
     if role == 'patient':
         payload = request.get_json()
@@ -33,27 +49,20 @@ def register(role):
             user = Hospitals
         else:
             user = Pharmacy
-        '''check if a file exists'''
+        #check if a file exists
         files = request.files.getlist('files')
         if not files:
             return 'Missing file', 400
         payload = json.loads(request.form.get('payload'))
     else:
         return 'Invalid url', 400
+    
     #validate payload
-    schema = validate_reg_data()
-    try:
-        schema.load(payload)
-    except ValidationError as err:
-        return jsonify(
-            {
-                'error':{
-                    'type': 'ValidationError',
-                    'message': err.messages
-                }
-            }
-        ), 400
-    #store data
+    validation_err = check_schema(payload, 'register')
+    if validation_err:
+        return jsonify(validation_err), 400
+    
+    #add users
     role = payload['role']
     name = payload['name']
     email = payload['email']
@@ -82,7 +91,7 @@ def register(role):
             email = email,
         )
         #one time pwd to be issued after the hospital has been verified
-        new_user.set_pwd(str(random.randint(000000, 999999)))
+        new_user.set_pwd(create_random_pwd())
     elif role == 'pharmacy':
         new_user = Pharmacy(
             pharm_uuid = gen_uuid(),
@@ -92,7 +101,7 @@ def register(role):
             email = email,
         )
         #one time pwd to be issued after the pharmacy has been verified
-        new_user.set_pwd(str(random.randint(000000, 999999)))
+        new_user.set_pwd(create_random_pwd)
     try:
         db.session.add(new_user)
         db.session.commit()
@@ -100,6 +109,7 @@ def register(role):
         db.session.rollback()
         current_app.logger.error(f'{role} registration failed', exc_info=True)
         return 'registration failed', 500
+    
     #save the files for hospital and pharmacy
     if role != 'patient':
         try:
@@ -108,51 +118,86 @@ def register(role):
         except:
             current_app.logger.error(f'File for {role} not saved', exc_info=True)
             return 'An error occured while saving the file', 500
-        #email body
+        #create email body for pharmacy and hospital
         body = f'Your registration documents have been received. We will verfiy them and\
             get back to you as soon as possible. Thank you for considering to offer your services through us.'
     else:
-        #email body
+        #create email body for patients
         body = f'Thank you for registering with Virtual Doctor..\
             We ensure you get quality healthcare anywhere anytime.\
                 Your doctor is a few clicks away. Feel free to reach out incase of any issues.'
+    
     #send email
     subject = 'Virtual Doctor registration'
     recipients = [email]
     send_email(subject, recipients, body)
-    return 'registration success', 201
+    return jsonify(
+        {
+            'status': 'ok',
+            'role': role
+        }
+    ), 201
 
 
 @auth_bp.route('/login/<string:role>', methods=['POST'])
 def login(role):
+    '''user login endpoint'''
     payload = request.get_json()
-    email = payload.get('email')
-    pwd = payload.get('pwd')
-    #check the role to search the respective table
+
+    #check the role to define table name
     if role == 'patient':
-        table = Patients
+        user = Patients
     elif role == 'doctor':
-        table = Doctors
+        user = Doctors
     elif role == 'hospital':
-        table = Hospitals
+        user = Hospitals
     elif role == 'pharmacy':
-        table = Pharmacy
+        user = Pharmacy
     else:
         return 'Bad request', 400
+    
+    #validate payload
+    validation_err = check_schema(payload, 'login')
+    if validation_err:
+        current_app.logger.error(f'Validation error on login: {validation_err}')
+        return jsonify({
+            'message': 'Invalid email or password. Please try again'
+        }), 400
+    
+    #verify login credentials
+    email = payload.get('email')
+    pwd = payload.get('pwd')
     try:
-        user = db.session.query(table).filter_by(email=email).first()
-        #check password
-        if not user:
-            return 'No user found', 404
-        correct_pwd = user.check_pwd(pwd, user.password)
+        #check if user exists
+        available_user = db.session.query(user).filter_by(email=email).first()
+        if not available_user:
+            return jsonify({
+                'message': 'Invalid email or password',
+            }
+            ), 404
+        
+        #verify password
+        correct_pwd = available_user.check_pwd(pwd, available_user.password)
     except:
-        current_app.logger.error(f'An error occured while querying the table {table}', exc_info=True)
-        return 'An error occured', 500
+        current_app.logger.error(f'An error occured while querying the table {user}', exc_info=True)
+        return jsonify({
+            'message': 'An error occured! Please try again'
+        }), 500
+    
     if correct_pwd:
         #create token
-        token = create_access_token(identity=email, role=role)
-        response = make_response({'role': role})
-        response.set_cookie({'auth_token': token})
+        token = create_access_token(identity={
+            'email': email,
+            'role': role
+        })
+        response = make_response({
+            'role': role,
+            'message': 'Login successful'
+            })
+        # response.set_cookie('auth_token', token, httponly=True, secure=True, samesite='Lax')
+        response.set_cookie('auth_token', token)
         return response, 200
     else:
-        return 'Unauthorized', 401   
+        return jsonify({
+            'message': 'Invalid email/password'
+        }), 401

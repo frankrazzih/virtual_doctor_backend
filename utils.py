@@ -9,6 +9,8 @@ import redis
 import os
 from werkzeug.utils import secure_filename
 from flask import current_app
+import random
+from app import csrf
 
 executor = ThreadPoolExecutor() #to create a separate thread to send the email
 #set redis client
@@ -67,3 +69,11 @@ def pre_process_file(file, dir_name, username)->str:
     file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], dir_name, username + '-' + filename)
     file.save(file_path)
     return file_path
+
+def create_random_pwd():
+    '''creates a random password'''
+    return str(random.randint(000000, 999999))
+
+def create_csrf_token():
+    '''creates a csrf token'''
+    return csrf.gen

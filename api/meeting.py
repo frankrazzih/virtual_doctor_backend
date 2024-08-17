@@ -10,7 +10,7 @@ from flask import (
     redirect,
     url_for,
     flash)
-from .utils import (
+from ..utils import (
     hash_pwd,
     check_pwd,
     gen_uuid,
