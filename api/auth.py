@@ -11,16 +11,16 @@ from flask import request, jsonify, Blueprint, current_app, make_response
 from .schema import validate_schema
 from marshmallow import ValidationError
 from datetime import datetime
-import random
 import json
-from ..utils import (
+from .utils import (
     gen_uuid,
     get_cur_time,
     pre_process_file,
     send_email,
-    create_random_pwd
-    
+    create_random_pwd,
+    create_csrf_token,
 )
+from csrf import csrf
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -37,6 +37,7 @@ def check_schema(payload: dict, activity: str)->dict:
                 }
             }
 
+@csrf.exempt
 @auth_bp.route('/register/<string:role>', methods=['POST'])
 def register(role):
     '''user registration endpoint'''
@@ -52,15 +53,21 @@ def register(role):
         #check if a file exists
         files = request.files.getlist('files')
         if not files:
-            return 'Missing file', 400
+            return jsonify({
+                'message': f'No file was uploaded'
+            }), 400
         payload = json.loads(request.form.get('payload'))
     else:
-        return 'Invalid url', 400
+        return jsonify({
+            'message': 'Invalid url'
+        }), 400
     
     #validate payload
     validation_err = check_schema(payload, 'register')
     if validation_err:
-        return jsonify(validation_err), 400
+        return jsonify({
+            'message': validation_err
+        }), 400
     
     #add users
     role = payload['role']
@@ -70,7 +77,9 @@ def register(role):
     #check if user exists
     user_exists = db.session.query(user).filter_by(email=email).first()
     if user_exists:
-        return 'User already exists', 409
+        return jsonify({
+            'message': 'User already exists. Login instead'
+        }), 409
     if role == 'patient':
         new_user = Patients(
             patient_uuid = gen_uuid(),
@@ -108,7 +117,9 @@ def register(role):
     except:
         db.session.rollback()
         current_app.logger.error(f'{role} registration failed', exc_info=True)
-        return 'registration failed', 500
+        return jsonify({
+            'message': 'An error occured. Please try again'
+        }), 500
     
     #save the files for hospital and pharmacy
     if role != 'patient':
@@ -117,7 +128,9 @@ def register(role):
                 pre_process_file(file, role, name)
         except:
             current_app.logger.error(f'File for {role} not saved', exc_info=True)
-            return 'An error occured while saving the file', 500
+            return jsonify({
+                'message': 'An error occured while processing the file. Please upload the documents again'
+            }), 500
         #create email body for pharmacy and hospital
         body = f'Your registration documents have been received. We will verfiy them and\
             get back to you as soon as possible. Thank you for considering to offer your services through us.'
@@ -133,12 +146,12 @@ def register(role):
     send_email(subject, recipients, body)
     return jsonify(
         {
-            'status': 'ok',
+            'message': 'Regisration successful',
             'role': role
         }
     ), 201
 
-
+@csrf.exempt
 @auth_bp.route('/login/<string:role>', methods=['POST'])
 def login(role):
     '''user login endpoint'''
@@ -154,14 +167,16 @@ def login(role):
     elif role == 'pharmacy':
         user = Pharmacy
     else:
-        return 'Bad request', 400
+        return jsonify({
+            'error': 'Invalid role'
+        }), 400
     
     #validate payload
     validation_err = check_schema(payload, 'login')
     if validation_err:
         current_app.logger.error(f'Validation error on login: {validation_err}')
         return jsonify({
-            'message': 'Invalid email or password. Please try again'
+            'error': 'Invalid email or password. Please try again'
         }), 400
     
     #verify login credentials
@@ -172,32 +187,32 @@ def login(role):
         available_user = db.session.query(user).filter_by(email=email).first()
         if not available_user:
             return jsonify({
-                'message': 'Invalid email or password',
+                'error': 'Invalid email or password',
             }
             ), 404
         
         #verify password
         correct_pwd = available_user.check_pwd(pwd, available_user.password)
+        if not correct_pwd:
+            return jsonify({
+                'error': 'Invalid email/password'
+            }), 401
     except:
         current_app.logger.error(f'An error occured while querying the table {user}', exc_info=True)
         return jsonify({
-            'message': 'An error occured! Please try again'
+            'error': 'An error occured! Please try again'
         }), 500
     
-    if correct_pwd:
-        #create token
-        token = create_access_token(identity={
-            'email': email,
-            'role': role
+    #create a jwt token
+    token = create_access_token(identity={
+        'email': email,
+        'role': role
+    })
+    response = make_response({
+        'role': role,
+        'message': 'Login successful',
+        'csrf_token': create_csrf_token()
         })
-        response = make_response({
-            'role': role,
-            'message': 'Login successful'
-            })
-        # response.set_cookie('auth_token', token, httponly=True, secure=True, samesite='Lax')
-        response.set_cookie('auth_token', token)
-        return response, 200
-    else:
-        return jsonify({
-            'message': 'Invalid email/password'
-        }), 401
+    # response.set_cookie('auth_token', token, httponly=True, secure=True, samesite='Lax')
+    response.set_cookie('auth_token', token)
+    return response, 200

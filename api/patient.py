@@ -22,8 +22,8 @@ from models.models import (
     Stock,
     Pharmacy,
     Pharm_orders
-    ) 
-from ..utils import (
+    )
+from .utils import (
     hash_pwd,
     check_pwd,
     gen_uuid,

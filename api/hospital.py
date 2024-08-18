@@ -16,7 +16,7 @@ from models.models import (
     Doctors,
     Services
     )
-from ..utils import (
+from .utils import (
     hash_pwd,
     check_pwd,
     gen_uuid,

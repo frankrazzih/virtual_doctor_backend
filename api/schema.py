@@ -20,6 +20,7 @@ class validate_schema(Schema):
     def __init__(self, activity):
         '''defines the class activity attribute'''
         self.activity = activity
+        super().__init__()
 
     #check specific fields
     @validates_schema

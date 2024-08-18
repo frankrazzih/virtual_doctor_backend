@@ -10,7 +10,7 @@ import os
 from werkzeug.utils import secure_filename
 from flask import current_app
 import random
-from app import csrf
+from flask_wtf.csrf import generate_csrf
 
 executor = ThreadPoolExecutor() #to create a separate thread to send the email
 #set redis client
@@ -76,4 +76,4 @@ def create_random_pwd():
 
 def create_csrf_token():
     '''creates a csrf token'''
-    return csrf.gen
+    return generate_csrf()

@@ -13,9 +13,9 @@ class Base_model:
             return False
     
     def check_pwd(self, password: str, hashed_pwd: bytes)->bool:
-        '''checks if a password is correct'''
+        '''checks if a password is correct and returns true else false'''
         try:
-            res = bcrypt.checkpw(password.encode('UTF-8'), hashed_pwd)
+            res = bcrypt.checkpw(password.encode('UTF-8'), hashed_pwd.encode('UTF-8'))
         except:
             current_app.logger.error('An error occored while checking the password', exc_info=True)
             return False

@@ -12,14 +12,11 @@ from log_conf import logger
 from flask_talisman import Talisman
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from flask_wtf.csrf import CSRFProtect
-
-csrf = None
+from csrf import csrf
 
 def create_app():
-    '''configure the app from different modules'''
+    '''create and configure app'''
     app = Flask(__name__)
-
     load_dotenv() #load the env variables
     #secure app
     app.secret_key = os.getenv('APP_KEY')
@@ -34,10 +31,10 @@ def create_app():
     #serve the app over https only
     # talisman = Talisman(app, content_security_policy=None)
 
+    #configure cors and csrf protection
     CORS(app)
-    global csrf
-    csrf = CSRFProtect(app)
-
+    csrf.init_app(app)
+    
     #setup logging
     try:
         app.logger = logger
