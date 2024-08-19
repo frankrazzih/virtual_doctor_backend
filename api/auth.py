@@ -54,19 +54,19 @@ def register(role):
         files = request.files.getlist('files')
         if not files:
             return jsonify({
-                'message': f'No file was uploaded'
+                'error': 'No file was uploaded'
             }), 400
         payload = json.loads(request.form.get('payload'))
     else:
         return jsonify({
-            'message': 'Invalid url'
+            'error': 'Invalid request'
         }), 400
     
     #validate payload
     validation_err = check_schema(payload, 'register')
     if validation_err:
         return jsonify({
-            'message': validation_err
+            'error': 'Invalid email or password format'
         }), 400
     
     #add users
@@ -78,7 +78,7 @@ def register(role):
     user_exists = db.session.query(user).filter_by(email=email).first()
     if user_exists:
         return jsonify({
-            'message': 'User already exists. Login instead'
+            'error': 'User already exists. Login instead'
         }), 409
     if role == 'patient':
         new_user = Patients(
@@ -118,7 +118,7 @@ def register(role):
         db.session.rollback()
         current_app.logger.error(f'{role} registration failed', exc_info=True)
         return jsonify({
-            'message': 'An error occured. Please try again'
+            'error': 'An error occured. Please try again'
         }), 500
     
     #save the files for hospital and pharmacy
@@ -129,7 +129,7 @@ def register(role):
         except:
             current_app.logger.error(f'File for {role} not saved', exc_info=True)
             return jsonify({
-                'message': 'An error occured while processing the file. Please upload the documents again'
+                'error': 'An error occured while processing the file. Please upload the documents again'
             }), 500
         #create email body for pharmacy and hospital
         body = f'Your registration documents have been received. We will verfiy them and\
