@@ -203,16 +203,18 @@ def login(role):
             'error': 'An error occured! Please try again'
         }), 500
     
-    #create a jwt token
-    token = create_access_token(identity={
+    #create auth tokens token
+    jwt_token = create_access_token(identity={
         'email': email,
         'role': role
     })
+    csrf_token = create_csrf_token()
+    # response.set_cookie('auth_token', token, secure=True, samesite='Lax')
+    # response.set_cookie('csrf_token', token, secure=True, samesite='Lax')
+    response.set_cookie('jwt_token', jwt_token)
+    response.set_cookie('csrf_token', csrf_token)
     response = make_response({
         'role': role,
         'message': 'Login successful',
-        'csrf_token': create_csrf_token()
         })
-    # response.set_cookie('auth_token', token, httponly=True, secure=True, samesite='Lax')
-    response.set_cookie('auth_token', token)
     return response, 200
