@@ -156,17 +156,15 @@ def register(role):
 def login(role):
     '''user login endpoint'''
     payload = request.get_json()
-
-    #check the role to define table name
-    if role == 'patient':
-        user = Patients
-    elif role == 'doctor':
-        user = Doctors
-    elif role == 'hospital':
-        user = Hospitals
-    elif role == 'pharmacy':
-        user = Pharmacy
-    else:
+    #assign user to respective table model
+    user_models = {
+        'patient': Patients,
+        'doctor': Doctors,
+        'hospital': Hospitals,
+        'pharmacy': Pharmacy
+    }
+    user = user_models.get(role)
+    if not user:
         return jsonify({
             'error': 'Invalid role'
         }), 400
@@ -202,19 +200,46 @@ def login(role):
         return jsonify({
             'error': 'An error occured! Please try again'
         }), 500
-    
+    #create response
+    response = make_response({
+    'role': role,
+    'message': 'Login successful',
+    })
     #create auth tokens token
     jwt_token = create_access_token(identity={
         'email': email,
         'role': role
     })
     csrf_token = create_csrf_token()
-    # response.set_cookie('auth_token', token, secure=True, samesite='Lax')
+    # response.set_cookie('jwt_token', token, secure=True, samesite='Lax')
     # response.set_cookie('csrf_token', token, secure=True, samesite='Lax')
     response.set_cookie('jwt_token', jwt_token)
     response.set_cookie('csrf_token', csrf_token)
-    response = make_response({
-        'role': role,
-        'message': 'Login successful',
-        })
+    return response, 200
+
+@jwt_required
+@auth_bp.route('/auth_status', methods=['GET'])
+def auth_status():
+    '''checks the auth status'''
+    return jsonify({'status': 'true'}), 200
+
+@jwt_required
+@auth_bp.route('/logout', methods=['GET'])
+def logout():
+    '''clears auth tokens from cookies'''
+    response =  make_response({'message': 'Logged out successfully'})
+    response.set_cookie('jwt_token', '', expires=0)
+    response.set_cookie('csrf_token', '', expires=0)
+    return response, 200
+
+@jwt_required
+@auth_bp.route('/refresh_token', methods=['GET'])
+def refresh_token():
+    '''refresh auth tokens'''
+    jwt_token = create_access_token(identity=get_current_user())
+    csrf_token = create_csrf_token()
+    response = make_response({'message': 'true'})
+    #implement secure cookies in production
+    response.set_cookie('jwt_token', jwt_token)
+    response.set_cookie('csrf_token', csrf_token)
     return response, 200
