@@ -202,6 +202,7 @@ def login(role):
         }), 500
     #create response
     response = make_response({
+    'email': email,
     'role': role,
     'message': 'Login successful',
     })
@@ -221,7 +222,15 @@ def login(role):
 @auth_bp.route('/auth_status', methods=['GET'])
 def auth_status():
     '''checks the auth status'''
-    return jsonify({'status': 'true'}), 200
+    payload = request.get_json()
+    email = payload.get('email')
+    role = payload.get('role')
+    identity = get_current_user()
+    if email in identity and role in identity:
+        return jsonify({'status': 'true'}), 200
+    else:
+        return jsonify({'status': 'false'}), 403
+        
 
 @jwt_required
 @auth_bp.route('/logout', methods=['GET'])
