@@ -6,7 +6,7 @@ from models.models import (
     Pharmacy,
     db
 )
-from flask_jwt_extended import create_access_token, jwt_required, get_current_user
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from flask import request, jsonify, Blueprint, current_app, make_response
 from .schema import validate_schema
 from marshmallow import ValidationError
@@ -218,22 +218,14 @@ def login(role):
     response.set_cookie('csrf_token', csrf_token)
     return response, 200
 
-@jwt_required
 @auth_bp.route('/auth_status', methods=['GET'])
+@jwt_required
 def auth_status():
     '''checks the auth status'''
-    payload = request.get_json()
-    email = payload.get('email')
-    role = payload.get('role')
-    identity = get_current_user()
-    if email in identity and role in identity:
-        return jsonify({'status': 'true'}), 200
-    else:
-        return jsonify({'status': 'false'}), 403
+    return jsonify({'status': 'true'}), 200
         
-
+@auth_bp.route('/logout', methods=['POST'])
 @jwt_required
-@auth_bp.route('/logout', methods=['GET'])
 def logout():
     '''clears auth tokens from cookies'''
     response =  make_response({'message': 'Logged out successfully'})
@@ -241,11 +233,11 @@ def logout():
     response.set_cookie('csrf_token', '', expires=0)
     return response, 200
 
+@auth_bp.route('/refresh_token', methods=['POST'])
 @jwt_required
-@auth_bp.route('/refresh_token', methods=['GET'])
 def refresh_token():
     '''refresh auth tokens'''
-    jwt_token = create_access_token(identity=get_current_user())
+    jwt_token = create_access_token(identity=get_jwt_identity())
     csrf_token = create_csrf_token()
     response = make_response({'message': 'true'})
     #implement secure cookies in production
