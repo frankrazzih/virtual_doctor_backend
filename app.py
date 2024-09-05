@@ -13,16 +13,19 @@ from flask_talisman import Talisman
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from csrf import csrf
+from datetime import timedelta
 
 def create_app():
     '''create and configure app'''
     app = Flask(__name__)
-    load_dotenv() #load the env variables
-    #secure app
+    load_dotenv()
     app.secret_key = os.getenv('APP_KEY')
+
     # Set up JWT
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
     app.config['JWT_TOKEN_LOCATION'] = ['cookies']
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=2)
+    app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=1)
     #app.config['JWT_COOKIE_SECURE'] = True
     app.config['JWT_ACCESS_COOKIE_PATH'] = '/'
     #app.config['JWT_COOKIE_CSRF_PROTECT'] = True  # Enable CSRF protection for cookies

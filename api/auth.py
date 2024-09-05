@@ -6,7 +6,7 @@ from models.models import (
     Pharmacy,
     db
 )
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, create_refresh_token, jwt_refresh_token_required
 from flask import request, jsonify, Blueprint, current_app, make_response
 from .schema import validate_schema
 from marshmallow import ValidationError
@@ -207,14 +207,17 @@ def login(role):
     'message': 'Login successful',
     })
     #create auth tokens token
-    jwt_token = create_access_token(identity={
+    identity = {
         'email': email,
         'role': role
-    })
+    }
+    jwt_token = create_access_token(identity=identity)
+    refresh_token = create_refresh_token(identity=identity)
     csrf_token = create_csrf_token()
     # response.set_cookie('jwt_token', token, secure=True, samesite='Lax')
     # response.set_cookie('csrf_token', token, secure=True, samesite='Lax')
     response.set_cookie('jwt_token', jwt_token)
+    response.set_cookie('refresh_token', refresh_token)
     response.set_cookie('csrf_token', csrf_token)
     return response, 200
 
@@ -234,13 +237,15 @@ def logout():
     return response, 200
 
 @auth_bp.route('/refresh_token', methods=['POST'])
-@jwt_required
+@jwt_refresh_token_required
 def refresh_token():
     '''refresh auth tokens'''
     jwt_token = create_access_token(identity=get_jwt_identity())
+    refresh_token = create_refresh_token(identity=get_jwt_identity())
     csrf_token = create_csrf_token()
     response = make_response({'message': 'true'})
     #implement secure cookies in production
     response.set_cookie('jwt_token', jwt_token)
+    response.set_cookie('refresh_token', refresh_token)
     response.set_cookie('csrf_token', csrf_token)
     return response, 200
