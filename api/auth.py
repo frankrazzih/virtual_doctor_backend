@@ -136,7 +136,7 @@ def register(role):
             get back to you as soon as possible. Thank you for considering to offer your services through us.'
     else:
         #create email body for patients
-        body = f'Thank you for registering with Virtual Doctor..\
+        body = f'Thank you for registering with Virtual Doctor.\
             We ensure you get quality healthcare anywhere anytime.\
                 Your doctor is a few clicks away. Feel free to reach out incase of any issues.'
     
@@ -202,7 +202,6 @@ def login(role):
         }), 500
     #create response
     response = make_response({
-    'email': email,
     'role': role,
     'message': 'Login successful',
     })
@@ -234,6 +233,7 @@ def logout():
     response =  make_response({'message': 'Logged out successfully'})
     response.set_cookie('jwt_token', '', expires=0)
     response.set_cookie('csrf_token', '', expires=0)
+    response.set_cookie('refresh_token', '', expires=0)
     return response, 200
 
 @auth_bp.route('/refresh_token', methods=['POST'])
